@@ -108,6 +108,10 @@
         <h3 style="margin-bottom:8px;">🔧 Добавить инструмент</h3>
         <input id="t-name" placeholder="Название инструмента">
         <input id="t-ser" placeholder="Серийный номер">
+                <div class="row">
+          <input id="t-date" type="date" style="margin-bottom:10px;" title="Дата поступления">
+          <input id="t-price" type="number" placeholder="Стоимость, ₽" style="margin-bottom:10px;">
+        </div>
         <input id="t-photo" type="file" accept="image/*" style="font-size:12px;">
         <button id="btn-add-tool" onclick="addTool()">Добавить на склад</button>
       </div>
@@ -347,7 +351,9 @@
     galHtml += '</div>';
     img.insertAdjacentHTML('afterend', galHtml);
 
-    document.getElementById('m-info').textContent = `Место: ${o ? o.name : 'Склад'} | У кого: ${h ? h.name : 'Никого'}`;
+        const dtText = t.purchase_date ? new Date(t.purchase_date).toLocaleDateString('ru-RU') : '—';
+    const prText = t.price ? Number(t.price).toLocaleString('ru-RU') + ' ₽' : '—';
+    document.getElementById('m-info').innerHTML = `Место: <strong>${o ? o.name : 'Склад'}</strong> | У кого: <strong>${h ? h.name : 'Никого'}</strong><br>Поступил: <strong>${dtText}</strong> | Стоимость: <strong>${prText}</strong>`;
     const objOpt = objs.filter(x => x.id !== 1).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
     const empOpt = emps.filter(x => x.id !== user.id).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
 
@@ -375,12 +381,19 @@
     document.getElementById('modal').classList.remove('hidden');
   }
 
-  async function editTool(id) {
+    async function editTool(id) {
     const t = tools.find(x => x.id === id);
     const n = prompt('Новое название:', t.name);
     if (!n) return;
     const s = prompt('Серийный номер:', t.serial_number || '');
-    await api('tools?id=eq.' + id, 'PATCH', { name: n.trim(), serial_number: (s || '').trim() });
+    const d = prompt('Дата поступления (ГГГГ-ММ-ДД, например 2026-11-25):', t.purchase_date || '');
+    const p = prompt('Стоимость (руб.):', t.price || '');
+    await api('tools?id=eq.' + id, 'PATCH', {
+      name: n.trim(),
+      serial_number: (s || '').trim(),
+      purchase_date: (d && d.trim()) ? d.trim() : null,
+      price: (p && !isNaN(Number(p))) ? Number(p) : null
+    });
     document.getElementById('modal').classList.add('hidden'); refresh();
   }
 
@@ -483,13 +496,21 @@
   async function closeObj(id) { if (confirm('Закрыть объект?')) { await api('objects?id=eq.' + id, 'PATCH', { is_active: false }); refresh(); } }
   async function delEmp(id) { if (confirm('Удалить сотрудника?')) { await api('employees?id=eq.' + id, 'DELETE'); refresh(); } }
 
-  async function addTool() {
-    const name = document.getElementById('t-name').value.trim(), serial_number = document.getElementById('t-ser').value.trim();
+    async function addTool() {
+    const name = document.getElementById('t-name').value.trim();
+    const serial_number = document.getElementById('t-ser').value.trim();
+    const purchase_date = document.getElementById('t-date').value || null;
+    const priceVal = document.getElementById('t-price').value;
+    const price = priceVal ? Number(priceVal) : null;
     if (!name) return;
     document.getElementById('btn-add-tool').textContent = 'Сохранение...';
     const photo_url = await uploadPhoto('t-photo');
-    await api('tools', 'POST', { name, serial_number, status: 'stock', object_id: 1, photo_url });
-    document.getElementById('t-name').value = ''; document.getElementById('t-ser').value = ''; document.getElementById('t-photo').value = '';
+    await api('tools', 'POST', { name, serial_number, purchase_date, price, status: 'stock', object_id: 1, photo_url });
+    document.getElementById('t-name').value = '';
+    document.getElementById('t-ser').value = '';
+    document.getElementById('t-date').value = '';
+    document.getElementById('t-price').value = '';
+    document.getElementById('t-photo').value = '';
     document.getElementById('btn-add-tool').textContent = 'Добавить на склад';
     alert('Добавлено!'); refresh();
   }
@@ -502,11 +523,8 @@
     document.getElementById('e-name').value = ''; document.getElementById('e-pin').value = ''; refresh();
   }
 
-      function exportExcel() {
-    if (typeof XLSX === 'undefined') {
-      alert('Файл xlsx.js ещё не загрузился, подождите 1 минуту и обновите страницу');
-      return;
-    }
+        function exportExcel() {
+    if (typeof XLSX === 'undefined') return alert('Подождите загрузки библиотеки Excel');
     const now = new Date();
     const dateStr = now.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     const fileDate = now.toLocaleDateString('ru-RU').replace(/\./g, '-');
@@ -516,13 +534,19 @@
       ['ОТЧЁТ ПО УЧЁТУ ИНСТРУМЕНТА'],
       ['Дата и время формирования:', dateStr],
       [],
-      ['Инв. номер', 'Название', 'Серийный номер', 'Статус', 'Ответственный', 'Текущий объект']
+      ['Инв. номер', 'Название', 'Серийный номер', 'Дата поступления', 'Стоимость, ₽', 'Статус', 'Ответственный', 'Текущий объект']
     ];
+    let totalSum = 0;
     tools.forEach(t => {
       const h = emps.find(e => e.id === t.holder_id);
       const o = objs.find(x => x.id === t.object_id);
-      toolsRows.push([t.inv_number, t.name, t.serial_number || '', st[t.status] || t.status, h ? h.name : '—', o ? o.name : 'Склад']);
+      const dt = t.purchase_date ? new Date(t.purchase_date).toLocaleDateString('ru-RU') : '';
+      const pr = t.price ? Number(t.price) : 0;
+      totalSum += pr;
+      toolsRows.push([t.inv_number, t.name, t.serial_number || '', dt, pr || '', st[t.status] || t.status, h ? h.name : '—', o ? o.name : 'Склад']);
     });
+    toolsRows.push([]);
+    toolsRows.push(['', '', '', 'ИТОГО:', totalSum, '', '', '']);
 
     const consRows = [
       ['ОСТАТКИ РАСХОДНИКОВ НА СКЛАДЕ'],
@@ -535,7 +559,7 @@
     const wb = XLSX.utils.book_new();
     const wsTools = XLSX.utils.aoa_to_sheet(toolsRows);
     const wsCons = XLSX.utils.aoa_to_sheet(consRows);
-    wsTools['!cols'] = [{ wch: 12 }, { wch: 32 }, { wch: 18 }, { wch: 14 }, { wch: 24 }, { wch: 26 }];
+    wsTools['!cols'] = [{ wch: 12 }, { wch: 30 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 24 }];
     wsCons['!cols'] = [{ wch: 36 }, { wch: 12 }, { wch: 10 }];
     XLSX.utils.book_append_sheet(wb, wsTools, 'Инструмент');
     XLSX.utils.book_append_sheet(wb, wsCons, 'Расходники');
@@ -546,8 +570,8 @@
     if (typeof XLSX === 'undefined') return alert('Подождите загрузки библиотеки Excel');
     const wb = XLSX.utils.book_new();
     const wsT = XLSX.utils.json_to_sheet([
-      { 'Название': 'Перфоратор Bosch GBH 2-26', 'Серийный номер': 'SN-123456' },
-      { 'Название': 'Пресс-клещи ПКВк-16', 'Серийный номер': '' }
+      { 'Название': 'Перфоратор Bosch GBH 2-26', 'Серийный номер': 'SN-123456', 'Дата поступления (ГГГГ-ММ-ДД)': '2026-11-25', 'Стоимость': 18500 },
+      { 'Название': 'Пресс-клещи ПКВк-16', 'Серийный номер': '', 'Дата поступления (ГГГГ-ММ-ДД)': '', 'Стоимость': 3200 }
     ]);
     const wsC = XLSX.utils.json_to_sheet([
       { 'Название': 'Бур SDS-plus 8x160', 'Количество': 20, 'Ед. изм.': 'шт' },
@@ -570,12 +594,18 @@
         const rows = XLSX.utils.sheet_to_json(wb.Sheets['Инструмент']);
         const payload = rows
           .filter(r => r['Название'] && String(r['Название']).trim())
-          .map(r => ({
-            name: String(r['Название']).trim(),
-            serial_number: r['Серийный номер'] ? String(r['Серийный номер']).trim() : '',
-            status: 'stock',
-            object_id: 1
-          }));
+          .map(r => {
+            const rawDate = r['Дата поступления (ГГГГ-ММ-ДД)'] || r['Дата поступления'];
+            const rawPrice = r['Стоимость'];
+            return {
+              name: String(r['Название']).trim(),
+              serial_number: r['Серийный номер'] ? String(r['Серийный номер']).trim() : '',
+              purchase_date: rawDate ? String(rawDate).trim() : null,
+              price: (rawPrice !== undefined && rawPrice !== '' && !isNaN(Number(rawPrice))) ? Number(rawPrice) : null,
+              status: 'stock',
+              object_id: 1
+            };
+          });
         if (payload.length) {
           await api('tools', 'POST', payload);
           addedT = payload.length;

@@ -132,13 +132,21 @@
         <input id="t-photo" type="file" accept="image/*" capture="environment" style="font-size:12px;">
         <button id="btn-add-tool" onclick="addTool()">Добавить на склад</button>
       </div>
-      <div class="card">
-        <h3 style="margin-bottom:8px;">🏗️ Объекты</h3>
-        <div class="row" style="margin-bottom:8px;">
-          <input id="o-name" placeholder="Новый объект / адрес" style="margin:0;">
-          <button onclick="addObj()" class="btn-dark" style="width:auto; margin:0;">+</button>
-        </div>
-        <div id="admin-objs-list"></div>
+            <div class="card">
+        <details id="objs-accordion">
+          <summary style="font-size:17px; font-weight:bold; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center;">
+            <span>🏗️ Объекты (<span id="objs-count">0</span>)</span>
+            <span style="font-size:12px; color:#2563eb;">▼ Развернуть / Скрыть</span>
+          </summary>
+          <div style="margin-top:12px;">
+            <div class="row" style="margin-bottom:8px;">
+              <input id="o-name" placeholder="Добавить новый объект..." style="margin:0;">
+              <button onclick="addObj()" class="btn-dark" style="width:auto; margin:0;">+</button>
+            </div>
+            <input id="o-search" type="text" oninput="renderAdminLists()" placeholder="🔍 Быстрый поиск объекта..." style="background:#f8fafc; margin-bottom:8px;">
+            <div id="admin-objs-list" style="max-height:280px; overflow-y:auto;"></div>
+          </div>
+        </details>
       </div>
       <div class="card">
         <h3 style="margin-bottom:8px;">👷 Сотрудники</h3>
@@ -272,13 +280,15 @@
     refresh();
   }
 
-  async function refresh() {
+    async function refresh() {
     [tools, objs, emps, cons] = await Promise.all([
       api('tools?select=*&order=inv_number.asc'),
-      api('objects?select=*&is_active=eq.true&order=id.asc'),
+      api('objects?select=*&is_active=eq.true&order=name.asc'),
       api('employees?select=*&order=name.asc'),
       api('consumables?select=*&order=name.asc')
     ]);
+    // Склад (id=1) оставляем первым, остальные — строго по алфавиту
+    objs.sort((a, b) => a.id === 1 ? -1 : b.id === 1 ? 1 : a.name.localeCompare(b.name, 'ru'));
     renderTools(); renderCons(); renderAdminLists();
   }
 
@@ -524,8 +534,18 @@
     document.getElementById('cons-modal').classList.add('hidden'); refresh();
   }
 
-  function renderAdminLists() {
-    document.getElementById('admin-objs-list').innerHTML = objs.map(o => `<div class="list-row"><span>${o.name}</span>${o.id !== 1 ? `<button onclick="closeObj(${o.id})" class="btn-red btn-sm">Закрыть</button>` : ''}</div>`).join('');
+    function renderAdminLists() {
+    const activeObjs = objs.filter(o => o.id !== 1);
+    const cntEl = document.getElementById('objs-count');
+    if (cntEl) cntEl.textContent = activeObjs.length;
+
+    const q = (document.getElementById('o-search')?.value || '').toLowerCase().trim();
+    const filteredObjs = objs.filter(o => o.name.toLowerCase().includes(q));
+
+    document.getElementById('admin-objs-list').innerHTML = filteredObjs.length
+      ? filteredObjs.map(o => `<div class="list-row"><span>${o.name}</span>${o.id !== 1 ? `<button onclick="closeObj(${o.id})" class="btn-red btn-sm">Закрыть</button>` : '<span style="font-size:11px; color:#94a3b8;">База</span>'}</div>`).join('')
+      : '<div style="font-size:13px; color:#94a3b8; text-align:center; padding:8px;">Ничего не найдено</div>';
+
     document.getElementById('admin-emps-list').innerHTML = emps.map(e => `<div class="list-row"><span>${e.name} (ПИН: ${e.pin})</span>${e.id !== user.id ? `<button onclick="delEmp(${e.id})" class="btn-red btn-sm">✕</button>` : ''}</div>`).join('');
   }
 

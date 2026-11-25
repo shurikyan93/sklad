@@ -112,7 +112,7 @@
           <input id="t-date" type="date" style="margin-bottom:10px;" title="Дата поступления">
           <input id="t-price" type="number" placeholder="Стоимость, ₽" style="margin-bottom:10px;">
         </div>
-        <input id="t-photo" type="file" accept="image/*" style="font-size:12px;">
+        <input id="t-photo" type="file" accept="image/*" capture="environment" style="font-size:12px;">
         <button id="btn-add-tool" onclick="addTool()">Добавить на склад</button>
       </div>
       <div class="card">
@@ -202,13 +202,32 @@
     return res.json();
   }
 
-  async function uploadPhoto(id) {
+    async function uploadPhoto(id) {
     const inp = document.getElementById(id);
-    if (!inp || !inp.files.length) return null;
-    const file = inp.files[0];
+    if (!inp || !inp.files || !inp.files.length) return null;
+    const rawFile = inp.files.item(0);
+
+    // Сжимаем фото в памяти телефона до 1200px (экономит место в 10 раз)
+    const blob = await new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 1200;
+        const scale = Math.min(1, maxW / img.width);
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(b => resolve(b || rawFile), 'image/jpeg', 0.8);
+      };
+      img.onerror = () => resolve(rawFile);
+      img.src = URL.createObjectURL(rawFile);
+    });
+
     const fn = Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.jpg';
     const res = await fetch(`${SB_URL}/storage/v1/object/tool-photos/${fn}`, {
-      method: 'POST', headers: { 'apikey': SB_KEY, 'Content-Type': file.type || 'image/jpeg' }, body: file
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'image/jpeg' },
+      body: blob
     });
     return res.ok ? `${SB_URL}/storage/v1/object/public/tool-photos/${fn}` : null;
   }
@@ -344,7 +363,7 @@
     }
     if (user.role === 'admin' && photos.length < 3) {
       galHtml += `<div class="row" style="margin-top:4px;">
-        <input id="m-new-photo" type="file" accept="image/*" style="margin:0; font-size:11px; padding:6px;">
+        <input id="m-new-photo" type="file" accept="image/*" capture="environment" style="margin:0; font-size:11px; padding:6px;">
         <button onclick="addCardPhoto(${t.id})" class="btn-dark btn-sm">+ Фото (${photos.length}/3)</button>
       </div>`;
     }
@@ -364,7 +383,7 @@
       html = `<button onclick="actReturn(${t.id})" class="btn-green">✅ Вернуть на склад</button>
               <select id="a-emp">${empOpt}</select><select id="a-obj2">${objOpt || '<option value="1">Текущий объект</option>'}</select>
               <button onclick="actTransfer(${t.id})" class="btn-amber">🤝 Передать коллеге</button>
-              <input id="a-comm" placeholder="Опишите поломку..."><input id="a-rep-photo" type="file" accept="image/*" style="font-size:12px;">
+              <input id="a-comm" placeholder="Опишите поломку..."><input id="a-rep-photo" type="file" accept="image/*" capture="environment" style="font-size:12px;">
               <button id="btn-rep" onclick="actRepair(${t.id})" class="btn-red">🛠️ В ремонт</button>`;
     } else if (user.role === 'admin') {
       html = `<button onclick="actReturn(${t.id})" class="btn-green">✅ Вернуть из ремонта</button>`;

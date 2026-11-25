@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Учёт инструмента и склада</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    body { background: #f1f5f9; color: #1e293b; padding-bottom: 75px; }
+    .hidden { display: none !important; }
+    .box { max-width: 480px; margin: 12px auto; padding: 12px; }
+    .card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    input, select, button { width: 100%; padding: 11px; border-radius: 10px; font-size: 14px; margin-bottom: 10px; border: 1px solid #cbd5e1; }
+    button { background: #2563eb; color: #fff; border: none; font-weight: bold; cursor: pointer; }
+    .btn-green { background: #059669; } .btn-amber { background: #d97706; } .btn-red { background: #e11d48; } .btn-dark { background: #1e293b; }
+    .btn-sm { width: auto; padding: 6px 10px; font-size: 12px; margin: 0; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; background: #fff; display: flex; border-top: 1px solid #cbd5e1; z-index: 15; }
+    nav button { background: none; color: #64748b; border-radius: 0; margin: 0; font-size: 11px; padding: 10px 2px; }
+    nav button.active { color: #2563eb; border-top: 2px solid #2563eb; }
+    .badge { font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: bold; white-space: nowrap; }
+    .stock { background: #d1fae5; color: #065f46; } .work { background: #fef3c7; color: #92400e; } .repair { background: #ffe4e6; color: #9f1239; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; padding: 12px; z-index: 25; }
+    .thumb { width: 100%; max-height: 170px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0; }
+    .list-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    @media print {
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
+      #print-area { position: absolute; left: 0; top: 0; width: 100%; display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; }
+      .qr-sticker { border: 1px dashed #94a3b8; padding: 8px; text-align: center; page-break-inside: avoid; }
+    }
+  </style>
+  <script src="qrcode.js"></script>
+  <script src="jsQR.js"></script>
+</head>
+<body>
+<div class="box">
+  <div id="login-screen" class="card">
+    <h2 style="text-align:center; margin-bottom:14px;">⚡ Учёт инструмента</h2>
+    <select id="login-emp"><option>Загрузка...</option></select>
+    <input id="login-pin" type="password" inputmode="numeric" maxlength="4" placeholder="ПИН-код" style="text-align:center; font-size:22px; letter-spacing:6px;">
+    <button onclick="doLogin()">Войти</button>
+    <p id="err-msg" style="color:#e11d48; font-size:13px; text-align:center;"></p>
+  </div>
+
+  <div id="app-screen" class="hidden">
+    <div class="card row" style="justify-content:space-between;">
+      <strong id="user-title"></strong>
+      <button onclick="location.reload()" class="btn-sm" style="background:#e2e8f0; color:#334155;">Выйти</button>
+    </div>
+
+    <div id="tab-tools">
+      <input id="search" type="text" oninput="renderTools()" placeholder="Поиск по названию или EL-...">
+      <div class="row" style="margin-bottom:10px;">
+        <button onclick="setFlt('all')" class="btn-sm" style="flex:1;">Все</button>
+        <button onclick="setFlt('stock')" class="btn-green btn-sm" style="flex:1;">Склад</button>
+        <button onclick="setFlt('work')" class="btn-amber btn-sm" style="flex:1;">Работа</button>
+        <button onclick="setFlt('repair')" class="btn-red btn-sm" style="flex:1;">Ремонт</button>
+      </div>
+      <div id="tools-list"></div>
+    </div>
+
+    <div id="tab-cons" class="hidden">
+      <div id="admin-add-cons" class="card hidden">
+        <h3 style="margin-bottom:8px;">➕ Новый расходник</h3>
+        <input id="c-name" placeholder="Название (напр. Коронка 68 мм)">
+        <div class="row">
+          <input id="c-qty" type="number" placeholder="Кол-во" style="margin:0;">
+          <select id="c-unit" style="margin:0;"><option value="шт">шт</option><option value="уп">уп</option><option value="м">м</option><option value="бухта">бухта</option></select>
+          <button onclick="addCons()" class="btn-dark" style="width:auto; margin:0;">+</button>
+        </div>
+      </div>
+      <div id="cons-list"></div>
+    </div>
+
+    <div id="tab-scan" class="hidden">
+      <div class="card" style="text-align:center;">
+        <h3 style="margin-bottom:8px;">📷 Сканер QR-кода</h3>
+        <video id="qr-video" class="hidden" style="width:100%; border-radius:10px; background:#000; margin-bottom:10px;" playsinline></video>
+        <div class="row">
+          <button onclick="startCam()">Включить камеру</button>
+          <button onclick="stopCam()" style="background:#e2e8f0; color:#334155;">Стоп</button>
+        </div>
+        <p id="scan-status" style="font-size:12px; color:#64748b;"></p>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:8px;">Ручной ввод номера</h3>
+        <div class="row">
+          <input id="man-inv" placeholder="EL-001" style="margin:0; text-transform:uppercase;">
+          <button onclick="findManual()" class="btn-dark" style="width:auto; margin:0;">Найти</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-logs" class="hidden"><div id="logs-list"></div></div>
+    <div id="tab-admin" class="hidden">
+      <div class="row" style="margin-bottom:12px;">
+        <button onclick="exportExcel()" class="btn-green" style="margin:0;">📊 Отчёт Excel</button>
+        <button onclick="printAllQR()" class="btn-dark" style="margin:0;">🖨️ Печать QR</button>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:8px;">🔧 Добавить инструмент</h3>
+        <input id="t-name" placeholder="Название инструмента">
+        <input id="t-ser" placeholder="Серийный номер">
+        <input id="t-photo" type="file" accept="image/*" style="font-size:12px;">
+        <button id="btn-add-tool" onclick="addTool()">Добавить на склад</button>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:8px;">🏗️ Объекты</h3>
+        <div class="row" style="margin-bottom:8px;">
+          <input id="o-name" placeholder="Новый объект / адрес" style="margin:0;">
+          <button onclick="addObj()" class="btn-dark" style="width:auto; margin:0;">+</button>
+        </div>
+        <div id="admin-objs-list"></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:8px;">👷 Сотрудники</h3>
+        <input id="e-name" placeholder="Фамилия Имя">
+        <div class="row">
+          <input id="e-pin" maxlength="4" placeholder="ПИН (4 цифры)">
+          <select id="e-role"><option value="worker">Монтажник</option><option value="admin">Руководитель</option></select>
+        </div>
+        <button onclick="addEmp()" class="btn-dark">Добавить сотрудника</button>
+        <div id="admin-emps-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="card" style="width:100%; max-width:410px; max-height:90vh; overflow-y:auto;">
+    <div class="row" style="justify-content:space-between; margin-bottom:6px;">
+      <strong id="m-inv" style="color:#2563eb;"></strong>
+      <button onclick="document.getElementById('modal').classList.add('hidden')" class="btn-sm" style="background:#e2e8f0; color:#000;">✕</button>
+    </div>
+    <h3 id="m-name" style="margin-bottom:6px;"></h3>
+    <img id="m-photo" class="thumb hidden">
+    <p id="m-info" style="font-size:13px; color:#475569; margin-bottom:12px;"></p>
+    <div id="m-actions"></div>
+    <div id="m-admin-edit" style="margin-top:12px; border-top:1px solid #e2e8f0; padding-top:10px;"></div>
+    <div style="text-align:center; margin-top:12px;">
+      <img id="m-qr" style="width:110px; height:110px; border:1px solid #cbd5e1; padding:4px; border-radius:8px;">
+    </div>
+  </div>
+</div>
+
+<div id="cons-modal" class="modal hidden">
+  <div class="card" style="width:100%; max-width:380px;">
+    <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+      <strong id="cm-title"></strong>
+      <button onclick="document.getElementById('cons-modal').classList.add('hidden')" class="btn-sm" style="background:#e2e8f0; color:#000;">✕</button>
+    </div>
+    <p id="cm-stock" style="font-size:13px; color:#64748b; margin-bottom:10px;"></p>
+    <input id="cm-qty" type="number" min="1" value="1">
+    <select id="cm-obj"></select>
+    <button onclick="takeCons()">Взять на объект (списать)</button>
+    <div id="cm-admin-box" class="hidden" style="border-top:1px solid #e2e8f0; padding-top:10px; margin-top:6px;">
+      <div class="row">
+        <button onclick="addConsQty()" class="btn-green" style="margin:0;">+ Пополнить</button>
+        <button onclick="delCons()" class="btn-red" style="width:auto; margin:0;">🗑️</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="print-area" class="hidden"></div>
+<nav id="navbar" class="hidden">
+  <button onclick="tab('tools')" id="n-tools" class="active">🔧 Инструмент</button>
+  <button onclick="tab('cons')" id="n-cons">📦 Расходники</button>
+  <button onclick="tab('scan')" id="n-scan">📷 QR</button>
+  <button onclick="tab('logs')" id="n-logs">📋 Журнал</button>
+  <button onclick="tab('admin')" id="n-admin" class="hidden">⚙️ Админ</button>
+</nav>
+<script>
+  // === ВПИШИТЕ ВАШИ КЛЮЧИ СЮДА ===
+  const SB_URL = 'https://hedvmvvagozcnfufvnnh.supabase.co';
+  const SB_KEY = 'sb_publishable_ROfy0OkzwSF-mA9xZEt0UQ_dZ0agsaQ';
+  // ================================
+
+  let user = null, tools = [], emps = [], objs = [], cons = [], flt = 'all', camStream = null, scanTimer = null, curConsId = null;
+
+  async function api(path, method = 'GET', body = null) {
+    const opt = { method, headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' } };
+    if (body) opt.body = JSON.stringify(body);
+    const res = await fetch(SB_URL + '/rest/v1/' + path, opt);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  async function uploadPhoto(id) {
+    const inp = document.getElementById(id);
+    if (!inp || !inp.files.length) return null;
+    const file = inp.files[0];
+    const fn = Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.jpg';
+    const res = await fetch(`${SB_URL}/storage/v1/object/tool-photos/${fn}`, {
+      method: 'POST', headers: { 'apikey': SB_KEY, 'Content-Type': file.type || 'image/jpeg' }, body: file
+    });
+    return res.ok ? `${SB_URL}/storage/v1/object/public/tool-photos/${fn}` : null;
+  }
+
+  window.onload = async () => {
+    try {
+      emps = await api('employees?select=*&order=name.asc');
+      document.getElementById('login-emp').innerHTML = emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    } catch (e) { document.getElementById('err-msg').textContent = 'Ошибка подключения: проверьте ключи'; }
+  };
+
+  function doLogin() {
+    const id = Number(document.getElementById('login-emp').value);
+    const pin = document.getElementById('login-pin').value.trim();
+    user = emps.find(e => e.id === id);
+    if (!user || user.pin !== pin) { document.getElementById('err-msg').textContent = 'Неверный ПИН-код'; return; }
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+    document.getElementById('navbar').classList.remove('hidden');
+    document.getElementById('user-title').textContent = user.name;
+    if (user.role === 'admin') {
+      document.getElementById('n-admin').classList.remove('hidden');
+      document.getElementById('admin-add-cons').classList.remove('hidden');
+    }
+    refresh();
+  }
+
+  async function refresh() {
+    [tools, objs, emps, cons] = await Promise.all([
+      api('tools?select=*&order=inv_number.asc'),
+      api('objects?select=*&is_active=eq.true&order=id.asc'),
+      api('employees?select=*&order=name.asc'),
+      api('consumables?select=*&order=name.asc')
+    ]);
+    renderTools(); renderCons(); renderAdminLists();
+  }
+
+  function setFlt(f) { flt = f; renderTools(); }
+
+  function renderTools() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const st = { stock: 'На складе', work: 'В работе', repair: 'В ремонте' };
+    document.getElementById('tools-list').innerHTML = tools
+      .filter(t => (flt === 'all' || t.status === flt) && (t.name.toLowerCase().includes(q) || t.inv_number.toLowerCase().includes(q)))
+      .map(t => {
+        const h = emps.find(e => e.id === t.holder_id), o = objs.find(x => x.id === t.object_id);
+        return `<div class="card" onclick="openTool(${t.id})" style="cursor:pointer;">
+          <div class="row" style="justify-content:space-between;"><strong>${t.inv_number} — ${t.name}</strong><span class="badge ${t.status}">${st[t.status]}</span></div>
+          <div style="font-size:12px; color:#64748b; margin-top:6px;">📍 ${o ? o.name : 'Склад'} ${h ? '| 👷 ' + h.name : ''}</div>
+        </div>`;
+      }).join('');
+  }
+</script>
+<script>
+  function openTool(id) {
+    const t = tools.find(x => x.id === id);
+    if (!t) return;
+    const h = emps.find(e => e.id === t.holder_id), o = objs.find(x => x.id === t.object_id);
+    document.getElementById('m-inv').textContent = t.inv_number + (t.serial_number ? ' (S/N: ' + t.serial_number + ')' : '');
+    document.getElementById('m-name').textContent = t.name;
+    const img = document.getElementById('m-photo');
+    if (t.photo_url) { img.src = t.photo_url; img.classList.remove('hidden'); } else { img.classList.add('hidden'); }
+    document.getElementById('m-info').textContent = `Место: ${o ? o.name : 'Склад'} | У кого: ${h ? h.name : 'Никого'}`;
+    const objOpt = objs.filter(x => x.id !== 1).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+    const empOpt = emps.filter(x => x.id !== user.id).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+
+    let html = '';
+    if (t.status === 'stock') {
+      html = `<select id="a-obj">${objOpt || '<option value="1">Склад</option>'}</select><button onclick="actTake(${t.id})">Взять инструмент себе</button>`;
+    } else if (t.status === 'work') {
+      html = `<button onclick="actReturn(${t.id})" class="btn-green">✅ Вернуть на склад</button>
+              <select id="a-emp">${empOpt}</select><select id="a-obj2">${objOpt || '<option value="1">Текущий объект</option>'}</select>
+              <button onclick="actTransfer(${t.id})" class="btn-amber">🤝 Передать коллеге</button>
+              <input id="a-comm" placeholder="Опишите поломку..."><input id="a-rep-photo" type="file" accept="image/*" style="font-size:12px;">
+              <button id="btn-rep" onclick="actRepair(${t.id})" class="btn-red">🛠️ В ремонт</button>`;
+    } else if (user.role === 'admin') {
+      html = `<button onclick="actReturn(${t.id})" class="btn-green">✅ Вернуть из ремонта</button>`;
+    }
+    document.getElementById('m-actions').innerHTML = html;
+    document.getElementById('m-admin-edit').innerHTML = user.role === 'admin'
+      ? `<div class="row"><button onclick="editTool(${t.id})" class="btn-dark btn-sm" style="flex:1;">✏️ Изменить</button><button onclick="delTool(${t.id})" class="btn-red btn-sm" style="flex:1;">🗑️ Удалить</button></div>` : '';
+    document.getElementById('m-qr').src = makeQR(t.inv_number);
+    document.getElementById('modal').classList.remove('hidden');
+  }
+
+  async function editTool(id) {
+    const t = tools.find(x => x.id === id);
+    const n = prompt('Новое название:', t.name);
+    if (!n) return;
+    const s = prompt('Серийный номер:', t.serial_number || '');
+    await api('tools?id=eq.' + id, 'PATCH', { name: n.trim(), serial_number: (s || '').trim() });
+    document.getElementById('modal').classList.add('hidden'); refresh();
+  }
+
+  async function delTool(id) {
+    if (!confirm('Удалить эту карточку навсегда?')) return;
+    await api('logs?tool_id=eq.' + id, 'DELETE');
+    await api('tools?id=eq.' + id, 'DELETE');
+    document.getElementById('modal').classList.add('hidden'); refresh();
+  }
+
+  async function actTake(id) {
+    const objId = Number(document.getElementById('a-obj').value) || 1;
+    await api('tools?id=eq.' + id, 'PATCH', { status: 'work', holder_id: user.id, object_id: objId });
+    await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Взял в работу', object_id: objId });
+    document.getElementById('modal').classList.add('hidden'); refresh();
+  }
+
+  async function actReturn(id) {
+    await api('tools?id=eq.' + id, 'PATCH', { status: 'stock', holder_id: null, object_id: 1 });
+    await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Вернул на склад', object_id: 1 });
+    document.getElementById('modal').classList.add('hidden'); refresh();
+  }
+
+  async function actTransfer(id) {
+    const empId = Number(document.getElementById('a-emp').value), objId = Number(document.getElementById('a-obj2').value) || 1;
+    const next = emps.find(e => e.id === empId);
+    await api('tools?id=eq.' + id, 'PATCH', { status: 'work', holder_id: empId, object_id: objId });
+    await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Передал коллеге', object_id: objId, comment: next ? next.name : '' });
+    document.getElementById('modal').classList.add('hidden'); refresh();
+  }
+
+  async function actRepair(id) {
+    document.getElementById('btn-rep').textContent = 'Загрузка...';
+    const comment = document.getElementById('a-comm').value.trim(), photoUrl = await uploadPhoto('a-rep-photo');
+    const upd = { status: 'repair', holder_id: null, object_id: 1 };
+    if (photoUrl) upd.photo_url = photoUrl;
+    await api('tools?id=eq.' + id, 'PATCH', upd);
+    await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'В ремонт', object_id: 1, comment });
+    document.getElementById('modal').classList.add('hidden'); refresh();
+  }
+</script>
+<script>
+  function renderCons() {
+    document.getElementById('cons-list').innerHTML = cons.map(c => `
+      <div class="card row" style="justify-content:space-between; cursor:pointer;" onclick="openCons(${c.id})">
+        <strong>${c.name}</strong><span class="badge ${c.qty > 0 ? 'stock' : 'repair'}">${c.qty} ${c.unit}</span>
+      </div>`).join('');
+  }
+
+  function openCons(id) {
+    curConsId = id;
+    const c = cons.find(x => x.id === id);
+    document.getElementById('cm-title').textContent = c.name;
+    document.getElementById('cm-stock').textContent = `Остаток: ${c.qty} ${c.unit}`;
+    document.getElementById('cm-qty').value = 1;
+    document.getElementById('cm-obj').innerHTML = objs.filter(x => x.id !== 1).map(x => `<option value="${x.id}">${x.name}</option>`).join('') || '<option value="1">На объект</option>';
+    document.getElementById('cm-admin-box').classList.toggle('hidden', user.role !== 'admin');
+    document.getElementById('cons-modal').classList.remove('hidden');
+  }
+
+  async function takeCons() {
+    const c = cons.find(x => x.id === curConsId), val = Number(document.getElementById('cm-qty').value), objId = Number(document.getElementById('cm-obj').value) || 1;
+    if (val <= 0 || val > c.qty) return alert('Недостаточно на складе!');
+    await api('consumables?id=eq.' + c.id, 'PATCH', { qty: c.qty - val });
+    await api('logs', 'POST', { employee_id: user.id, action: `Взял расходник: ${c.name}`, object_id: objId, comment: `${val} ${c.unit}` });
+    document.getElementById('cons-modal').classList.add('hidden'); refresh();
+  }
+
+  async function addConsQty() {
+    const c = cons.find(x => x.id === curConsId), val = Number(document.getElementById('cm-qty').value);
+    if (val <= 0) return;
+    await api('consumables?id=eq.' + c.id, 'PATCH', { qty: c.qty + val });
+    await api('logs', 'POST', { employee_id: user.id, action: `Пополнил склад: ${c.name}`, object_id: 1, comment: `+${val} ${c.unit}` });
+    document.getElementById('cons-modal').classList.add('hidden'); refresh();
+  }
+
+  async function addCons() {
+    const name = document.getElementById('c-name').value.trim(), qty = Number(document.getElementById('c-qty').value) || 0, unit = document.getElementById('c-unit').value;
+    if (!name) return;
+    await api('consumables', 'POST', { name, qty, unit });
+    document.getElementById('c-name').value = ''; document.getElementById('c-qty').value = ''; refresh();
+  }
+
+  async function delCons() {
+    if (!confirm('Удалить позицию?')) return;
+    await api('consumables?id=eq.' + curConsId, 'DELETE');
+    document.getElementById('cons-modal').classList.add('hidden'); refresh();
+  }
+
+  function renderAdminLists() {
+    document.getElementById('admin-objs-list').innerHTML = objs.map(o => `<div class="list-row"><span>${o.name}</span>${o.id !== 1 ? `<button onclick="closeObj(${o.id})" class="btn-red btn-sm">Закрыть</button>` : ''}</div>`).join('');
+    document.getElementById('admin-emps-list').innerHTML = emps.map(e => `<div class="list-row"><span>${e.name} (ПИН: ${e.pin})</span>${e.id !== user.id ? `<button onclick="delEmp(${e.id})" class="btn-red btn-sm">✕</button>` : ''}</div>`).join('');
+  }
+
+  async function closeObj(id) { if (confirm('Закрыть объект?')) { await api('objects?id=eq.' + id, 'PATCH', { is_active: false }); refresh(); } }
+  async function delEmp(id) { if (confirm('Удалить сотрудника?')) { await api('employees?id=eq.' + id, 'DELETE'); refresh(); } }
+
+  async function addTool() {
+    const name = document.getElementById('t-name').value.trim(), serial_number = document.getElementById('t-ser').value.trim();
+    if (!name) return;
+    document.getElementById('btn-add-tool').textContent = 'Сохранение...';
+    const photo_url = await uploadPhoto('t-photo');
+    await api('tools', 'POST', { name, serial_number, status: 'stock', object_id: 1, photo_url });
+    document.getElementById('t-name').value = ''; document.getElementById('t-ser').value = ''; document.getElementById('t-photo').value = '';
+    document.getElementById('btn-add-tool').textContent = 'Добавить на склад';
+    alert('Добавлено!'); refresh();
+  }
+
+  async function addObj() { const name = document.getElementById('o-name').value.trim(); if (name) { await api('objects', 'POST', { name }); document.getElementById('o-name').value = ''; refresh(); } }
+  async function addEmp() {
+    const name = document.getElementById('e-name').value.trim(), pin = document.getElementById('e-pin').value.trim(), role = document.getElementById('e-role').value;
+    if (!name || pin.length !== 4) return alert('Нужно ФИО и 4 цифры ПИНа');
+    await api('employees', 'POST', { name, pin, role });
+    document.getElementById('e-name').value = ''; document.getElementById('e-pin').value = ''; refresh();
+  }
+
+  function exportExcel() {
+    const st = { stock: 'На складе', work: 'В работе', repair: 'В ремонте' };
+    let csv = '\uFEFFИнв. номер;Название;Серийный номер;Статус;Сотрудник;Объект\n';
+    tools.forEach(t => {
+      const h = emps.find(e => e.id === t.holder_id), o = objs.find(x => x.id === t.object_id);
+      csv += `${t.inv_number};"${t.name}";"${t.serial_number || ''}";${st[t.status]};"${h ? h.name : ''}";"${o ? o.name : 'Склад'}"\n`;
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    a.download = 'Отчет_склад.csv'; a.click();
+  }
+
+  function printAllQR() {
+  document.getElementById('print-area').innerHTML = tools.map(t => `<div class="qr-sticker"><img src="${makeQR(t.inv_number)}" style="width:110px;height:110px;"><div style="font-weight:bold;">${t.inv_number}</div><div style="font-size:11px;">${t.name}</div></div>`).join('');
+  setTimeout(() => window.print(), 300);
+  }
+
+  function findManual() {
+    const code = document.getElementById('man-inv').value.trim().toUpperCase(), t = tools.find(x => x.inv_number === code);
+    if (t) openTool(t.id); else alert('Не найдено: ' + code);
+  }
+
+  async function startCam() {
+    const st = document.getElementById('scan-status'), vid = document.getElementById('qr-video');
+    if (!('BarcodeDetector' in window)) { st.textContent = 'Автосканер не поддерживается — введите номер ниже.'; return; }
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      vid.srcObject = camStream; vid.classList.remove('hidden'); await vid.play();
+      st.textContent = 'Камера активна. Держите QR-код в 15–20 см от объектива...';
+      const det = new BarcodeDetector({ formats: ['qr_code'] });
+      scanTimer = setInterval(async () => {
+        const c = await det.detect(vid);
+        if (c.length) {
+          const val = c[0].rawValue.trim().toUpperCase(), found = tools.find(x => x.inv_number === val);
+          stopCam(); if (found) openTool(found.id); else alert('Неизвестный код: ' + val);
+        }
+      }, 400);
+    } catch (e) { st.textContent = 'Нет доступа к камере.'; }
+  }
+
+  function stopCam() {
+    clearInterval(scanTimer);
+    if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+    document.getElementById('qr-video').classList.add('hidden'); document.getElementById('scan-status').textContent = '';
+  }
+
+  async function tab(t) {
+    stopCam();
+    ['tools', 'cons', 'scan', 'logs', 'admin'].forEach(x => {
+      document.getElementById('tab-' + x).classList.add('hidden');
+      document.getElementById('n-' + x).classList.remove('active');
+    });
+    document.getElementById('tab-' + t).classList.remove('hidden');
+    document.getElementById('n-' + t).classList.add('active');
+    if (t === 'logs') {
+      const data = await api('logs?select=*&order=created_at.desc&limit=40');
+      document.getElementById('logs-list').innerHTML = data.map(l => {
+        const tl = tools.find(x => x.id === l.tool_id), em = emps.find(x => x.id === l.employee_id), ob = objs.find(x => x.id === l.object_id);
+        return `<div class="card" style="font-size:13px;"><strong>${tl ? tl.inv_number + ' ' + tl.name : l.action}</strong><br>${em ? em.name : ''}: ${tl ? l.action : ''} (${ob ? ob.name : ''}) ${l.comment ? '— ' + l.comment : ''}</div>`;
+      }).join('');
+    }
+  }
+        function makeQR(txt) {
+    if (window.qrcode) {
+      const qr = qrcode(0, 'M');
+      qr.addData(txt);
+      qr.make();
+      return qr.createDataURL(6, 4);
+    }
+    return '';
+  }
+
+</script>
+</body>
+</html>

@@ -98,6 +98,11 @@
       <div class="row" style="margin-bottom:12px;">
         <button onclick="exportExcel()" class="btn-green" style="margin:0;">📊 Отчёт Excel</button>
         <button onclick="printAllQR()" class="btn-dark" style="margin:0;">🖨️ Печать QR</button>
+              <div class="row" style="margin-bottom:12px;">
+        <button onclick="downloadTemplate()" class="btn-amber" style="margin:0;">📥 Шаблон Excel</button>
+        <button onclick="document.getElementById('excel-imp').click()" class="btn-dark" style="margin:0;">📤 Загрузить Excel</button>
+        <input id="excel-imp" type="file" accept=".xlsx,.xls" class="hidden" onchange="importExcel(this)">
+      </div>
       </div>
       <div class="card">
         <h3 style="margin-bottom:8px;">🔧 Добавить инструмент</h3>
@@ -502,6 +507,74 @@
       alert('Файл xlsx.js ещё не загрузился, подождите 1 минуту и обновите страницу');
       return;
     }
+        function downloadTemplate() {
+    if (typeof XLSX === 'undefined') return alert('Подождите загрузки библиотеки Excel');
+    const wb = XLSX.utils.book_new();
+    const wsT = XLSX.utils.aoa_to_sheet([
+      ['Название', 'Серийный номер'],
+      ['Перфоратор Bosch GBH 2-26', 'SN-123456'],
+      ['Пресс-клещи ПКВк-16', '']
+    ]);
+    const wsC = XLSX.utils.aoa_to_sheet([
+      ['Название', 'Количество', 'Ед. изм.'],
+      ['Бур SDS-plus 8x160', 20, 'шт'],
+      ['Наконечник НШВИ 1.5 (уп)', 15, 'уп']
+    ]);
+    wsT['!cols'] = [{ wch: 35 }, { wch: 20 }];
+    wsC['!cols'] = [{ wch: 35 }, { wch: 15 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, wsT, 'Инструмент');
+    XLSX.utils.book_append_sheet(wb, wsC, 'Расходники');
+    XLSX.writeFile(wb, 'Шаблон_загрузки_склад.xlsx');
+  }
+
+  async function importExcel(inp) {
+    const file = inp.files[0];
+    if (!file) return;
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf);
+      let addedT = 0, addedC = 0;
+
+      if (wb.Sheets['Инструмент']) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Инструмент']);
+        const payload = rows
+          .filter(r => r['Название'] && String(r['Название']).trim())
+          .map(r => ({
+            name: String(r['Название']).trim(),
+            serial_number: r['Серийный номер'] ? String(r['Серийный номер']).trim() : '',
+            status: 'stock',
+            object_id: 1
+          }));
+        if (payload.length) {
+          await api('tools', 'POST', payload);
+          addedT = payload.length;
+        }
+      }
+
+      if (wb.Sheets['Расходники']) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Расходники']);
+        const payload = rows
+          .filter(r => r['Название'] && String(r['Название']).trim())
+          .map(r => ({
+            name: String(r['Название']).trim(),
+            qty: Number(r['Количество']) || 0,
+            unit: r['Ед. изм.'] ? String(r['Ед. изм.']).trim() : 'шт'
+          }));
+        if (payload.length) {
+          await api('consumables', 'POST', payload);
+          addedC = payload.length;
+        }
+      }
+
+      inp.value = '';
+      alert(`Успешно загружено!\nИнструментов: ${addedT} шт.\nРасходников: ${addedC} поз.`);
+      refresh();
+    } catch (e) {
+      alert('Ошибка при чтении файла: ' + e.message);
+      inp.value = '';
+    }
+  }
+
     const now = new Date();
     const dateStr = now.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     const fileDate = now.toLocaleDateString('ru-RU').replace(/\./g, '-');

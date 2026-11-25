@@ -507,28 +507,24 @@
       alert('Файл xlsx.js ещё не загрузился, подождите 1 минуту и обновите страницу');
       return;
     }
-        function downloadTemplate() {
+    function downloadTemplate() {
     if (typeof XLSX === 'undefined') return alert('Подождите загрузки библиотеки Excel');
     const wb = XLSX.utils.book_new();
-    const wsT = XLSX.utils.aoa_to_sheet([
-      ['Название', 'Серийный номер'],
-      ['Перфоратор Bosch GBH 2-26', 'SN-123456'],
-      ['Пресс-клещи ПКВк-16', '']
+    const wsT = XLSX.utils.json_to_sheet([
+      { 'Название': 'Перфоратор Bosch GBH 2-26', 'Серийный номер': 'SN-123456' },
+      { 'Название': 'Пресс-клещи ПКВк-16', 'Серийный номер': '' }
     ]);
-    const wsC = XLSX.utils.aoa_to_sheet([
-      ['Название', 'Количество', 'Ед. изм.'],
-      ['Бур SDS-plus 8x160', 20, 'шт'],
-      ['Наконечник НШВИ 1.5 (уп)', 15, 'уп']
+    const wsC = XLSX.utils.json_to_sheet([
+      { 'Название': 'Бур SDS-plus 8x160', 'Количество': 20, 'Ед. изм.': 'шт' },
+      { 'Название': 'Наконечник НШВИ 1.5 (уп)', 'Количество': 15, 'Ед. изм.': 'уп' }
     ]);
-    wsT['!cols'] = [{ wch: 35 }, { wch: 20 }];
-    wsC['!cols'] = [{ wch: 35 }, { wch: 15 }, { wch: 12 }];
     XLSX.utils.book_append_sheet(wb, wsT, 'Инструмент');
     XLSX.utils.book_append_sheet(wb, wsC, 'Расходники');
     XLSX.writeFile(wb, 'Шаблон_загрузки_склад.xlsx');
   }
 
   async function importExcel(inp) {
-    const file = inp.files[0];
+    const file = inp.files.item(0);
     if (!file) return;
     try {
       const buf = await file.arrayBuffer();

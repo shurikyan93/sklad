@@ -39,7 +39,7 @@
   <div id="login-screen" class="card">
     <h2 style="text-align:center; margin-bottom:14px;">⚡ Учёт инструмента</h2>
     <select id="login-emp"><option>Загрузка...</option></select>
-    <input id="login-pin" type="password" inputmode="numeric" maxlength="4" placeholder="ПИН-код" style="text-align:center; font-size:22px; letter-spacing:6px;">
+    <input id="login-pin" type="password" inputmode="numeric" maxlength="4" placeholder="ПИН-код" onkeydown="if(event.key==='Enter') doLogin()" style="text-align:center; font-size:22px; letter-spacing:6px;">
     <button onclick="doLogin()">Войти</button>
     <p id="err-msg" style="color:#e11d48; font-size:13px; text-align:center;"></p>
   </div>

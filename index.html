@@ -502,12 +502,47 @@
     document.getElementById('e-name').value = ''; document.getElementById('e-pin').value = ''; refresh();
   }
 
-    function exportExcel() {
+      function exportExcel() {
     if (typeof XLSX === 'undefined') {
       alert('Файл xlsx.js ещё не загрузился, подождите 1 минуту и обновите страницу');
       return;
     }
-    function downloadTemplate() {
+    const now = new Date();
+    const dateStr = now.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const fileDate = now.toLocaleDateString('ru-RU').replace(/\./g, '-');
+    const st = { stock: 'На складе', work: 'В работе', repair: 'В ремонте' };
+
+    const toolsRows = [
+      ['ОТЧЁТ ПО УЧЁТУ ИНСТРУМЕНТА'],
+      ['Дата и время формирования:', dateStr],
+      [],
+      ['Инв. номер', 'Название', 'Серийный номер', 'Статус', 'Ответственный', 'Текущий объект']
+    ];
+    tools.forEach(t => {
+      const h = emps.find(e => e.id === t.holder_id);
+      const o = objs.find(x => x.id === t.object_id);
+      toolsRows.push([t.inv_number, t.name, t.serial_number || '', st[t.status] || t.status, h ? h.name : '—', o ? o.name : 'Склад']);
+    });
+
+    const consRows = [
+      ['ОСТАТКИ РАСХОДНИКОВ НА СКЛАДЕ'],
+      ['Дата и время формирования:', dateStr],
+      [],
+      ['Наименование', 'Остаток', 'Ед. изм.']
+    ];
+    cons.forEach(c => { consRows.push([c.name, c.qty, c.unit]); });
+
+    const wb = XLSX.utils.book_new();
+    const wsTools = XLSX.utils.aoa_to_sheet(toolsRows);
+    const wsCons = XLSX.utils.aoa_to_sheet(consRows);
+    wsTools['!cols'] = [{ wch: 12 }, { wch: 32 }, { wch: 18 }, { wch: 14 }, { wch: 24 }, { wch: 26 }];
+    wsCons['!cols'] = [{ wch: 36 }, { wch: 12 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, wsTools, 'Инструмент');
+    XLSX.utils.book_append_sheet(wb, wsCons, 'Расходники');
+    XLSX.writeFile(wb, `Отчет_склад_${fileDate}.xlsx`);
+  }
+
+  function downloadTemplate() {
     if (typeof XLSX === 'undefined') return alert('Подождите загрузки библиотеки Excel');
     const wb = XLSX.utils.book_new();
     const wsT = XLSX.utils.json_to_sheet([
@@ -569,55 +604,6 @@
       alert('Ошибка при чтении файла: ' + e.message);
       inp.value = '';
     }
-  }
-
-    const now = new Date();
-    const dateStr = now.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const fileDate = now.toLocaleDateString('ru-RU').replace(/\./g, '-');
-
-    const st = { stock: 'На складе', work: 'В работе', repair: 'В ремонте' };
-
-    // Лист 1: Инструмент
-    const toolsRows = [
-      ['ОТЧЁТ ПО УЧЁТУ ИНСТРУМЕНТА'],
-      ['Дата и время формирования:', dateStr],
-      [],
-      ['Инв. номер', 'Название', 'Серийный номер', 'Статус', 'Ответственный', 'Текущий объект']
-    ];
-    tools.forEach(t => {
-      const h = emps.find(e => e.id === t.holder_id);
-      const o = objs.find(x => x.id === t.object_id);
-      toolsRows.push([
-        t.inv_number,
-        t.name,
-        t.serial_number || '',
-        st[t.status] || t.status,
-        h ? h.name : '—',
-        o ? o.name : 'Склад'
-      ]);
-    });
-
-    // Лист 2: Расходники
-    const consRows = [
-      ['ОСТАТКИ РАСХОДНИКОВ НА СКЛАДЕ'],
-      ['Дата и время формирования:', dateStr],
-      [],
-      ['Наименование', 'Остаток', 'Ед. изм.']
-    ];
-    cons.forEach(c => {
-      consRows.push([c.name, c.qty, c.unit]);
-    });
-
-    const wb = XLSX.utils.book_new();
-    const wsTools = XLSX.utils.aoa_to_sheet(toolsRows);
-    const wsCons = XLSX.utils.aoa_to_sheet(consRows);
-
-    wsTools['!cols'] = [{ wch: 12 }, { wch: 32 }, { wch: 18 }, { wch: 14 }, { wch: 24 }, { wch: 26 }];
-    wsCons['!cols'] = [{ wch: 36 }, { wch: 12 }, { wch: 10 }];
-
-    XLSX.utils.book_append_sheet(wb, wsTools, 'Инструмент');
-    XLSX.utils.book_append_sheet(wb, wsCons, 'Расходники');
-    XLSX.writeFile(wb, `Отчет_склад_${fileDate}.xlsx`);
   }
 
   function printAllQR() {

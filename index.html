@@ -273,12 +273,15 @@
     } else if (user.role === 'admin') {
       html = `<button onclick="actReturn(${t.id})" class="btn-green">✅ Вернуть из ремонта</button>`;
     }
-    document.getElementById('m-actions').innerHTML = html;
+        document.getElementById('m-actions').innerHTML = html;
     document.getElementById('m-admin-edit').innerHTML = user.role === 'admin'
       ? `<div class="row"><button onclick="editTool(${t.id})" class="btn-dark btn-sm" style="flex:1;">✏️ Изменить</button><button onclick="delTool(${t.id})" class="btn-red btn-sm" style="flex:1;">🗑️ Удалить</button></div>` : '';
     document.getElementById('m-qr').src = makeQR(t.inv_number);
-    const oldBtn = document.getElementById('m-print-btn'); if (oldBtn) oldBtn.remove();
-    document.getElementById('m-qr').insertAdjacentHTML('afterend', `<div id="m-print-btn" style="margin-top:8px;"><butto0n onclick="printOneQR(${t.id})" class="btn-dark btn-sm">🖨️ Печать наклейки</button></div>`);
+
+    const oldBtn = document.getElementById('m-print-btn');
+    if (oldBtn) oldBtn.remove();
+    document.getElementById('m-qr').insertAdjacentHTML('afterend', `<div id="m-print-btn" style="margin-top:10px;"><button onclick="printOneQR(${t.id})" class="btn-dark" style="cursor:pointer;">🖨️ Печать QR</button></div>`);
+
     document.getElementById('modal').classList.remove('hidden');
   }
 

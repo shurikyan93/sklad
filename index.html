@@ -8,35 +8,37 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
     body { background: #f1f5f9; color: #1e293b; padding-bottom: 92px; }
     .hidden { display: none !important; }
-    .box { max-width: 480px; margin: 12px auto; padding: 12px; }
+    .box { max-width: 500px; margin: 10px auto; padding: 10px; }
     .card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    input, select, button { width: 100%; padding: 11px; border-radius: 10px; font-size: 14px; margin-bottom: 10px; border: 1px solid #cbd5e1; }
+    input, select, button { width: 100%; padding: 10px; border-radius: 10px; font-size: 14px; margin-bottom: 8px; border: 1px solid #cbd5e1; }
     button { background: #2563eb; color: #fff; border: none; font-weight: bold; cursor: pointer; }
-    .btn-green { background: #059669; } .btn-amber { background: #d97706; } .btn-red { background: #e11d48; } .btn-dark { background: #1e293b; }
+    .btn-green { background: #059669; } .btn-amber { background: #d97706; } .btn-red { background: #e11d48; } .btn-dark { background: #1e293b; } .btn-purple { background: #7c3aed; }
     .btn-sm { width: auto; padding: 6px 10px; font-size: 12px; margin: 0; }
     .row { display: flex; gap: 8px; align-items: center; }
-    .hub-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px 16px; border-radius: 18px; margin-bottom: 14px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; border: none; }
-    .hub-btn span { font-size: 46px; margin-bottom: 10px; line-height: 1; }
-    .hub-btn strong { font-size: 19px; margin-bottom: 4px; }
+    .hub-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; border-radius: 18px; margin-bottom: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; border: none; }
+    .hub-btn span { font-size: 40px; margin-bottom: 8px; line-height: 1; }
+    .hub-btn strong { font-size: 18px; margin-bottom: 3px; }
     .hub-btn small { font-size: 12px; opacity: 0.9; font-weight: normal; }
-    nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; background: #f8fafc; display: flex; gap: 5px; padding: 6px; border-top: 1px solid #cbd5e1; box-shadow: 0 -2px 10px rgba(0,0,0,0.08); z-index: 15; }
-    nav button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 10px; margin: 0; padding: 8px 2px; font-size: 11px; font-weight: bold; border: 1px solid transparent; }
-    nav button span { font-size: 19px; line-height: 1; }
-    #n-tools, #nw-my { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-    #n-tools.active, #nw-my.active { background: #2563eb; color: #fff; }
-    #n-cons, #nw-add { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-    #n-cons.active, #nw-add.active { background: #059669; color: #fff; }
-    #n-scan, #nw-price { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-    #n-scan.active, #nw-price.active { background: #d97706; color: #fff; }
-    #n-logs { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
-    #n-logs.active { background: #7c3aed; color: #fff; }
-    #n-admin, #nw-admin { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
-    #n-admin.active, #nw-admin.active { background: #e11d48; color: #fff; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .stat-box { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; }
+    .stat-box small { display: block; font-size: 11px; opacity: 0.8; margin-bottom: 3px; }
+    .stat-box strong { font-size: 15px; }
+    nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto; background: #f8fafc; display: flex; gap: 4px; padding: 6px; border-top: 1px solid #cbd5e1; box-shadow: 0 -2px 10px rgba(0,0,0,0.08); z-index: 15; }
+    nav button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 10px; margin: 0; padding: 8px 2px; font-size: 10px; font-weight: bold; border: 1px solid transparent; }
+    nav button span { font-size: 18px; line-height: 1; }
+    .nb-blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; } .nb-blue.active { background: #2563eb; color: #fff; }
+    .nb-green { background: #ecfdf5; color: #047857; border-color: #a7f3d0; } .nb-green.active { background: #059669; color: #fff; }
+    .nb-amber { background: #fffbeb; color: #b45309; border-color: #fde68a; } .nb-amber.active { background: #d97706; color: #fff; }
+    .nb-purple { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; } .nb-purple.active { background: #7c3aed; color: #fff; }
+    .nb-red { background: #fff1f2; color: #be123c; border-color: #fecdd3; } .nb-red.active { background: #e11d48; color: #fff; }
     .badge { font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: bold; white-space: nowrap; }
-    .stock { background: #d1fae5; color: #065f46; } .work { background: #fef3c7; color: #92400e; } .repair { background: #ffe4e6; color: #9f1239; }
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; padding: 12px; z-index: 25; }
+    .stock, .done, .approved { background: #d1fae5; color: #065f46; }
+    .work, .wait_pay, .pending { background: #fef3c7; color: #92400e; }
+    .repair { background: #ffe4e6; color: #9f1239; }
+    .prelim-tag { background: #e0e7ff; color: #3730a3; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 12px; z-index: 25; }
     .thumb { width: 100%; max-height: 170px; object-fit: contain; background: #f8fafc; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0; cursor: zoom-in; }
-    .list-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    .list-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     @media print {
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
@@ -47,10 +49,11 @@
   <script src="qrcode.js"></script>
   <script src="jsQR.js"></script>
   <script src="xlsx.js"></script>
+  <script src="html2pdf.js"></script>
 </head>
 <body>
 <div class="box">
-  <!-- ВХОД -->
+  <!-- ЭКРАН ВХОДА -->
   <div id="login-screen" class="card">
     <h2 style="text-align:center; margin-bottom:14px;">⚡ Портал бригады</h2>
     <select id="login-emp"><option>Загрузка...</option></select>
@@ -59,30 +62,29 @@
     <p id="err-msg" style="color:#e11d48; font-size:13px; text-align:center;"></p>
   </div>
 
-  <!-- ОБЩАЯ ШАПКА ПОСЛЕ ВХОДА -->
+  <!-- ОБЩАЯ ВЕРХНЯЯ ШАПКА -->
   <div id="top-bar" class="card row hidden" style="justify-content:space-between;">
     <div class="row">
       <button id="btn-home" onclick="openHub()" class="btn-dark btn-sm hidden">🏠 Меню</button>
-      <strong id="user-title"></strong>
+      <div><strong id="user-title"></strong><br><small id="user-role-lbl" style="color:#64748b; font-size:11px;"></small></div>
     </div>
     <button onclick="location.reload()" class="btn-sm" style="background:#e2e8f0; color:#334155;">Выйти</button>
   </div>
 
-  <!-- ГЛАВНЫЙ ЭКРАН ВЫБОРА МОДУЛЯ -->
+  <!-- ГЛАВНОЕ МЕНЮ (ТРИ ПЛИТКИ) -->
   <div id="hub-screen" class="hidden">
     <button onclick="openModule('tools')" class="hub-btn" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);">
-      <span>🔧</span>
-      <strong>Учёт инструмента</strong>
-      <small>Склад, QR-коды, расходники, перемещения</small>
+      <span>🔧</span><strong>Учёт инструмента и склада</strong><small>Инструмент, QR-коды, инвентаризация остатков</small>
     </button>
-    <button onclick="openModule('salary')" class="hub-btn" style="background:linear-gradient(135deg,#059669,#047857);">
-      <span>💰</span>
-      <strong>Учёт работ и ЗП</strong>
-      <small>Оклад, сдельные работы, авансы и баланс</small>
+    <button onclick="openModule('projects')" class="hub-btn" style="background:linear-gradient(135deg,#059669,#047857);">
+      <span>💰</span><strong>Объекты, сметы и ЗП</strong><small>Этапы, КП, чеки, зарплата и финансы</small>
+    </button>
+    <button id="hub-settings-btn" onclick="openModule('settings')" class="hub-btn hidden" style="background:linear-gradient(135deg,#334155,#0f172a);">
+      <span>⚙️</span><strong>Справочники и настройки</strong><small>Сотрудники, оклады, объекты, прайс работ</small>
     </button>
   </div>
 
-  <!-- МОДУЛЬ 1: УЧЁТ ИНСТРУМЕНТА -->
+  <!-- МОДУЛЬ 1: УЧЁТ ИНСТРУМЕНТА И СКЛАДА -->
   <div id="mod-tools" class="hidden">
     <div id="tab-tools">
       <input id="search" type="text" oninput="renderTools()" placeholder="Поиск по названию или EL-...">
@@ -96,12 +98,15 @@
     </div>
 
     <div id="tab-cons" class="hidden">
+      <div class="card" style="background:#eff6ff; border:1px solid #bfdbfe; font-size:12px; color:#1e40af;">
+        ℹ️ Здесь учитываются только остатки основного склада (возвраты излишков и инвентаризация). Новые закупки вносятся напрямую в этап объекта.
+      </div>
       <div id="admin-add-cons" class="card hidden">
-        <h3 style="margin-bottom:8px;">➕ Новый расходник</h3>
-        <input id="c-name" placeholder="Название (напр. Коронка 68 мм)">
+        <h3 style="margin-bottom:8px;">➕ Позиция на склад (инвентаризация)</h3>
+        <input id="c-name" placeholder="Наименование">
         <div class="row">
           <input id="c-qty" type="number" placeholder="Кол-во" style="margin:0;">
-          <select id="c-unit" style="margin:0;"><option value="шт">шт</option><option value="уп">уп</option><option value="м">м</option><option value="бухта">бухта</option></select>
+          <select id="c-unit" style="margin:0;"><option value="шт">шт</option><option value="м">м</option><option value="уп">уп</option><option value="бухта">бухта</option></select>
           <button onclick="addCons()" class="btn-dark" style="width:auto; margin:0;">+</button>
         </div>
       </div>
@@ -110,26 +115,21 @@
 
     <div id="tab-scan" class="hidden">
       <div class="card" style="text-align:center;">
-        <h3 style="margin-bottom:8px;">📷 Сканер QR-кода</h3>
+        <h3 style="margin-bottom:8px;">📷 Сканер QR-кода инструмента</h3>
         <video id="qr-video" class="hidden" style="width:100%; border-radius:10px; background:#000; margin-bottom:10px;" playsinline></video>
-        <div class="row">
-          <button onclick="startCam()">Включить камеру</button>
-          <button onclick="stopCam()" style="background:#e2e8f0; color:#334155;">Стоп</button>
-        </div>
-        <p id="scan-status" style="font-size:12px; color:#64748b;"></p>
+        <div class="row"><button onclick="startCam()">Включить камеру</button><button onclick="stopCam()" style="background:#e2e8f0; color:#334155;">Стоп</button></div>
+        <p id="scan-status" style="font-size:12px; color:#64748b; margin-top:6px;"></p>
       </div>
       <div class="card">
         <h3 style="margin-bottom:8px;">Ручной ввод номера</h3>
-        <div class="row">
-          <input id="man-inv" placeholder="EL-001" style="margin:0; text-transform:uppercase;">
-          <button onclick="findManual()" class="btn-dark" style="width:auto; margin:0;">Найти</button>
-        </div>
+        <div class="row"><input id="man-inv" placeholder="EL-001" style="margin:0; text-transform:uppercase;"><button onclick="findManual()" class="btn-dark" style="width:auto; margin:0;">Найти</button></div>
       </div>
     </div>
 
     <div id="tab-logs" class="hidden"><div id="logs-list"></div></div>
+
     <div id="tab-admin" class="hidden">
-      <div class="row" style="margin-bottom:12px;">
+      <div class="row" style="margin-bottom:10px;">
         <button onclick="exportExcel()" class="btn-green" style="margin:0;">📊 Отчёт Excel</button>
         <button onclick="printAllQR()" class="btn-dark" style="margin:0;">🖨️ Печать QR</button>
       </div>
@@ -143,110 +143,239 @@
         <input id="t-name" placeholder="Название инструмента">
         <input id="t-ser" placeholder="Серийный номер">
         <div class="row">
-          <input id="t-date" type="date" style="margin-bottom:10px;" title="Дата поступления">
-          <input id="t-price" type="number" placeholder="Стоимость, ₽" style="margin-bottom:10px;">
+          <input id="t-date" type="date" style="margin-bottom:8px;" title="Дата поступления">
+          <input id="t-price" type="number" placeholder="Стоимость, ₽" style="margin-bottom:8px;">
         </div>
         <input id="t-photo" type="file" accept="image/*" style="font-size:12px;">
         <button id="btn-add-tool" onclick="addTool()">Добавить на склад</button>
       </div>
-      <div class="card">
-        <details id="objs-accordion">
-          <summary style="font-size:17px; font-weight:bold; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center;">
-            <span>🏗️ Объекты (<span id="objs-count">0</span>)</span>
-            <span style="font-size:12px; color:#2563eb;">▼ Развернуть / Скрыть</span>
-          </summary>
-          <div style="margin-top:12px;">
-            <div class="row" style="margin-bottom:8px;">
-              <input id="o-name" placeholder="Добавить новый объект..." style="margin:0;">
-              <button onclick="addObj()" class="btn-dark" style="width:auto; margin:0;">+</button>
-            </div>
-            <input id="o-search" type="text" oninput="renderAdminLists()" placeholder="🔍 Быстрый поиск объекта..." style="background:#f8fafc; margin-bottom:8px;">
-            <div id="admin-objs-list" style="max-height:280px; overflow-y:auto;"></div>
-          </div>
-        </details>
-      </div>
-      <div class="card">
-        <h3 style="margin-bottom:8px;">👷 Сотрудники</h3>
-        <input id="e-name" placeholder="Фамилия Имя">
-        <div class="row">
-          <input id="e-pin" maxlength="4" placeholder="ПИН (4 цифры)">
-          <select id="e-role"><option value="worker">Монтажник</option><option value="admin">Руководитель</option></select>
-        </div>
-        <button onclick="addEmp()" class="btn-dark">Добавить сотрудника</button>
-        <div id="admin-emps-list"></div>
-      </div>
     </div>
   </div>
+  <!-- МОДУЛЬ 2: ОБЪЕКТЫ, СМЕТЫ, ЗП И ФИНАНСЫ -->
+  <div id="mod-projects" class="hidden">
+    <!-- Вкладка 1: Объекты и этапы -->
+    <div id="ptab-objs">
+      <div id="admin-dash-card" class="card hidden" style="background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff;">
+        <div class="row" style="justify-content:space-between; margin-bottom:4px;">
+          <strong style="font-size:14px;">📊 Сводка руководителя</strong>
+          <input id="dash-month" type="month" onchange="renderDashboard()" style="width:auto; padding:4px 8px; margin:0; font-size:12px; background:#334155; color:#fff; border:none;">
+        </div>
+        <div id="dash-grid" class="stat-grid"></div>
+      </div>
 
-  <!-- МОДУЛЬ 2: УЧЁТ РАБОТ И ЗАРПЛАТ -->
-  <div id="mod-salary" class="hidden">
-    <div id="wtab-my">
-      <div class="card" style="background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff;">
-        <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-          <span style="font-size:13px; opacity:0.8;">Мой баланс (текущий месяц)</span>
-          <input id="sal-month" type="month" onchange="renderSalary()" style="width:auto; padding:4px 8px; margin:0; font-size:12px; background:#334155; color:#fff; border:none;">
+      <div id="proj-list-view">
+        <input id="proj-search" type="text" oninput="renderProjectsList()" placeholder="🔍 Поиск объекта...">
+        <div id="proj-list"></div>
+      </div>
+
+      <div id="proj-detail-view" class="hidden">
+        <button onclick="closeProjectDetail()" class="btn-dark btn-sm" style="margin-bottom:10px;">← Назад к объектам</button>
+        <div class="card">
+          <h3 id="pd-title" style="margin-bottom:8px;"></h3>
+          <div class="row">
+            <input id="new-stage-name" placeholder="Новый этап (напр. Черновой монтаж)" style="margin:0;">
+            <button onclick="addStage()" class="btn-green" style="width:auto; margin:0;">+ Этап</button>
+          </div>
+        </div>
+        <div id="stages-list"></div>
+      </div>
+
+      <div id="stage-detail-view" class="hidden">
+        <button onclick="closeStageDetail()" class="btn-dark btn-sm" style="margin-bottom:10px;">← Назад к этапам объекта</button>
+        <div class="card">
+          <div class="row" style="justify-content:space-between; margin-bottom:6px;">
+            <strong id="sd-obj-name" style="font-size:12px; color:#64748b;"></strong>
+            <select id="sd-status" onchange="changeStageStatus()" style="width:auto; padding:4px 8px; margin:0; font-size:12px; font-weight:bold;">
+              <option value="work">🟡 В работе</option>
+              <option value="wait_pay">🟠 Ожидание оплаты</option>
+              <option value="done">🟢 Завершён</option>
+            </select>
+          </div>
+          <h3 id="sd-title" style="margin-bottom:6px;"></h3>
+          <div id="sd-dates" style="font-size:12px; color:#64748b; margin-bottom:8px;"></div>
+          <div id="sd-totals" style="background:#f8fafc; padding:10px; border-radius:10px; font-size:13px; line-height:1.6;"></div>
+        </div>
+
+        <div class="row" style="margin-bottom:10px;">
+          <button id="btn-est-prelim" onclick="switchEstType('prelim')" class="btn-sm" style="flex:1;">📝 КП (Предварит.)</button>
+          <button id="btn-est-fact" onclick="switchEstType('fact')" class="btn-green btn-sm" style="flex:1;">📑 Отчёт (Факт)</button>
+        </div>
+
+        <div class="card">
+          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+            <strong id="est-box-title">Позиции</strong>
+            <button onclick="exportStagePDF()" class="btn-purple btn-sm">📄 Скачать PDF</button>
+          </div>
+          <div id="stage-items-list"></div>
+          <div style="border-top:1px solid #e2e8f0; margin-top:10px; padding-top:10px;">
+            <div class="row" style="margin-bottom:6px;">
+              <button onclick="openAddItemModal('work')" class="btn-sm" style="flex:1;">+ Работа</button>
+              <button onclick="openAddItemModal('mat')" class="btn-green btn-sm" style="flex:1;">+ Материал / Чек</button>
+              <button id="btn-from-stock" onclick="openStockToStageModal()" class="btn-amber btn-sm" style="flex:1;">📦 Со склада</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="sd-payments-card" class="card hidden">
+          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+            <strong>💳 Оплаты от заказчика</strong>
+            <span id="sd-paid-badge" class="badge stock"></span>
+          </div>
+          <div id="sd-payments-list" style="margin-bottom:8px;"></div>
+          <div class="row">
+            <input id="sp-amount" type="number" placeholder="Сумма оплаты, ₽" style="margin:0;">
+            <input id="sp-comm" placeholder="Примечание" style="margin:0;">
+            <button onclick="addStagePayment()" class="btn-green" style="width:auto; margin:0;">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Вкладка 2: Работы бригады и ЗП -->
+    <div id="ptab-work" class="hidden">
+      <div id="worker-sal-card" class="card" style="background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff;">
+        <div class="row" style="justify-content:space-between; margin-bottom:6px;">
+          <span style="font-size:13px; opacity:0.85;">Мой баланс за месяц</span>
+          <input id="sal-month" type="month" onchange="renderWorkAndSalary()" style="width:auto; padding:4px 8px; margin:0; font-size:12px; background:#334155; color:#fff; border:none;">
         </div>
         <div id="my-balance-box" style="font-size:14px; line-height:1.7;"></div>
       </div>
-      <h3 style="margin:10px 4px 8px;">📋 Мои работы и выплаты</h3>
-      <div id="my-work-list"></div>
-    </div>
 
-    <div id="wtab-add" class="hidden">
       <div class="card">
-        <h3 style="margin-bottom:10px;">➕ Отметить сдельную работу</h3>
-        <label style="font-size:12px; color:#64748b;">Объект:</label>
-        <select id="w-obj"></select>
-        <label style="font-size:12px; color:#64748b;">Вид работ из прайса:</label>
+        <h3 style="margin-bottom:8px;">➕ Сдать выполненную работу</h3>
+        <select id="w-obj" onchange="fillStageSelect('w-obj','w-stage')"></select>
+        <select id="w-stage"></select>
         <select id="w-type" onchange="calcWorkPreview()"></select>
-        <label style="font-size:12px; color:#64748b;">Выполненный объём:</label>
-        <input id="w-qty" type="number" min="0.1" step="0.1" value="1" oninput="calcWorkPreview()">
-        <input id="w-comm" placeholder="Комментарий (этаж, щит, примечание)">
-        <div id="w-preview" style="font-weight:bold; color:#059669; margin-bottom:10px; font-size:15px;"></div>
+        <div class="row">
+          <input id="w-qty" type="number" min="0.1" step="0.1" value="1" oninput="calcWorkPreview()" style="margin:0; width:100px;">
+          <input id="w-comm" placeholder="Комментарий" style="margin:0;">
+        </div>
+        <div id="w-preview" style="font-weight:bold; color:#059669; margin:8px 0; font-size:14px;"></div>
         <button onclick="submitWork()" class="btn-green">Отправить на проверку</button>
       </div>
-    </div>
 
-    <div id="wtab-price" class="hidden">
-      <div id="admin-add-price" class="card hidden">
-        <h3 style="margin-bottom:8px;">➕ Добавить расценку в прайс</h3>
-        <input id="p-name" placeholder="Наименование работы">
-        <div class="row">
-          <input id="p-rate" type="number" placeholder="Цена за 1 ед., ₽" style="margin:0;">
-          <select id="p-unit" style="margin:0; width:90px;"><option value="шт">шт</option><option value="м">м</option><option value="точка">точка</option><option value="смена">смена</option></select>
-          <button onclick="addWorkType()" class="btn-dark" style="width:auto; margin:0;">+</button>
-        </div>
-      </div>
-      <div id="price-list"></div>
-    </div>
-
-    <div id="wtab-admin" class="hidden">
-      <div class="card">
-        <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-          <h3>⏳ На проверке (<span id="pending-cnt">0</span>)</h3>
-          <button onclick="exportSalaryExcel()" class="btn-green btn-sm">📊 Ведомость Excel</button>
-        </div>
+      <div id="approve-box" class="card hidden">
+        <h3 style="margin-bottom:8px;">⏳ На подтверждении (<span id="pending-cnt">0</span>)</h3>
         <div id="pending-list"></div>
       </div>
 
-      <div class="card">
-        <h3 style="margin-bottom:8px;">💸 Записать выплату (аванс / ЗП)</h3>
+      <div id="admin-pay-box" class="card hidden">
+        <h3 style="margin-bottom:8px;">💸 Выплатить аванс / ЗП</h3>
         <select id="pay-emp"></select>
         <div class="row">
           <input id="pay-sum" type="number" placeholder="Сумма, ₽" style="margin:0;">
-          <select id="pay-type" style="margin:0; width:115px;"><option value="Аванс">Аванс</option><option value="Зарплата">Зарплата</option><option value="Премия">Премия</option></select>
+          <select id="pay-type" style="margin:0; width:110px;"><option value="Аванс">Аванс</option><option value="Зарплата">Зарплата</option><option value="Премия">Премия</option></select>
         </div>
-        <input id="pay-comm" placeholder="Примечание (необязательно)" style="margin-top:8px;">
+        <input id="pay-comm" placeholder="Примечание" style="margin-top:8px;">
         <button onclick="addPayment()" class="btn-dark">Провести выплату</button>
-      </div>
-
-      <div class="card">
-        <h3 style="margin-bottom:8px;">👥 Сводка по бригаде за месяц</h3>
+        <h4 style="margin:12px 0 6px;">Сводка ЗП за месяц:</h4>
         <div id="brigade-summary"></div>
       </div>
+
+      <div id="my-work-list"></div>
+    </div>
+
+    <!-- Вкладка 3: Накладные расходы -->
+    <div id="ptab-overhead" class="hidden">
+      <div class="card">
+        <h3 style="margin-bottom:8px;">🧾 Новый накладной расход</h3>
+        <div class="row">
+          <select id="oh-cat" style="margin:0;">
+            <option value="Бензин / ГСМ">⛽ Бензин / ГСМ</option>
+            <option value="Аренда гаража / склада">🏠 Аренда гаража</option>
+            <option value="Ремонт служебного авто">🚗 Ремонт авто</option>
+            <option value="Ремонт инструмента">🛠️ Ремонт инструмента</option>
+            <option value="Спецодежда и СИЗ">🦺 Спецодежда</option>
+            <option value="Прочие расходы">📦 Прочее</option>
+          </select>
+          <input id="oh-sum" type="number" placeholder="Сумма, ₽" style="margin:0; width:120px;">
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <input id="oh-date" type="date" style="margin:0; width:145px;">
+          <input id="oh-comm" placeholder="Комментарий" style="margin:0;">
+        </div>
+        <button onclick="addOverhead()" class="btn-red" style="margin-top:8px;">Записать расход</button>
+      </div>
+      <div id="overhead-list"></div>
+    </div>
+
+    <!-- Вкладка 4: Конструктор отчётов -->
+    <div id="ptab-reports" class="hidden">
+      <div class="card">
+        <h3 style="margin-bottom:8px;">📈 Финансовый и рабочий отчёт</h3>
+        <div class="row">
+          <input id="rep-from" type="date" style="margin:0;">
+          <input id="rep-to" type="date" style="margin:0;">
+        </div>
+        <select id="rep-obj" style="margin-top:8px;"></select>
+        <select id="rep-emp"></select>
+        <div class="row">
+          <button onclick="buildReport()" class="btn-purple" style="margin:0;">Сформировать</button>
+          <button onclick="exportReportExcel()" class="btn-green" style="margin:0;">📊 В Excel</button>
+        </div>
+      </div>
+      <div id="report-output"></div>
+    </div>
+  </div>
+  <!-- МОДУЛЬ 3: ЕДИНЫЕ СПРАВОЧНИКИ И НАСТРОЙКИ (РУКОВОДИТЕЛЬ) -->
+  <div id="mod-settings" class="hidden">
+    <div class="card">
+      <details open>
+        <summary style="font-size:16px; font-weight:bold; cursor:pointer; list-style:none;">👷 Сотрудники и оклады</summary>
+        <div style="margin-top:10px;">
+          <input id="e-name" placeholder="Фамилия Имя">
+          <div class="row">
+            <input id="e-pin" maxlength="4" placeholder="ПИН (4 цифры)">
+            <select id="e-role">
+              <option value="worker">Монтажник</option>
+              <option value="foreman">Прораб</option>
+              <option value="admin">Руководитель</option>
+            </select>
+          </div>
+          <button onclick="addEmp()" class="btn-dark">Добавить сотрудника</button>
+          <div id="admin-emps-list"></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary style="font-size:16px; font-weight:bold; cursor:pointer; list-style:none;">🏗️ Объекты (<span id="objs-count">0</span>)</summary>
+        <div style="margin-top:10px;">
+          <div class="row" style="margin-bottom:8px;">
+            <input id="o-name" placeholder="Новый объект / адрес" style="margin:0;">
+            <button onclick="addObj()" class="btn-dark" style="width:auto; margin:0;">+</button>
+          </div>
+          <input id="o-search" type="text" oninput="renderSettingsLists()" placeholder="🔍 Поиск объекта..." style="background:#f8fafc;">
+          <div id="admin-objs-list" style="max-height:260px; overflow-y:auto;"></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary style="font-size:16px; font-weight:bold; cursor:pointer; list-style:none;">🏷️ Прайс-лист работ (2 цены)</summary>
+        <div style="margin-top:10px;">
+          <div class="row" style="margin-bottom:10px;">
+            <button onclick="downloadPriceTemplate()" class="btn-amber btn-sm" style="flex:1;">📥 Шаблон прайса</button>
+            <button onclick="document.getElementById('price-imp').click()" class="btn-dark btn-sm" style="flex:1;">📤 Загрузить прайс</button>
+            <input id="price-imp" type="file" accept=".xlsx,.xls" class="hidden" onchange="importPriceExcel(this)">
+          </div>
+          <input id="p-name" placeholder="Наименование работы">
+          <div class="row">
+            <input id="p-rate" type="number" placeholder="ЗП работнику, ₽" style="margin:0;">
+            <input id="p-client-rate" type="number" placeholder="Цена заказчику, ₽" style="margin:0;">
+            <select id="p-unit" style="margin:0; width:85px;"><option value="шт">шт</option><option value="м">м</option><option value="точка">точка</option><option value="смена">смена</option></select>
+          </div>
+          <button onclick="addWorkType()" class="btn-green" style="margin-top:8px;">Добавить в прайс</button>
+          <div id="settings-price-list" style="margin-top:8px; max-height:280px; overflow-y:auto;"></div>
+        </div>
+      </details>
     </div>
   </div>
 </div>
+
+<!-- МОДАЛЬНЫЕ ОКНА СКЛАДА -->
 <div id="modal" class="modal hidden">
   <div class="card" style="width:100%; max-width:410px; max-height:90vh; overflow-y:auto;">
     <div class="row" style="justify-content:space-between; margin-bottom:6px;">
@@ -263,7 +392,6 @@
     </div>
   </div>
 </div>
-
 <div id="cons-modal" class="modal hidden">
   <div class="card" style="width:100%; max-width:380px;">
     <div class="row" style="justify-content:space-between; margin-bottom:8px;">
@@ -273,7 +401,7 @@
     <p id="cm-stock" style="font-size:13px; color:#64748b; margin-bottom:10px;"></p>
     <input id="cm-qty" type="number" min="1" value="1">
     <select id="cm-obj"></select>
-    <button onclick="takeCons()">Взять на объект (списать)</button>
+    <button onclick="takeCons()">Списать на объект</button>
     <div id="cm-admin-box" class="hidden" style="border-top:1px solid #e2e8f0; padding-top:10px; margin-top:6px;">
       <div class="row">
         <button onclick="addConsQty()" class="btn-green" style="margin:0;">+ Пополнить</button>
@@ -283,705 +411,93 @@
   </div>
 </div>
 
+<!-- МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ ПОЗИЦИИ / ЧЕКА В ЭТАП -->
+<div id="item-modal" class="modal hidden">
+  <div class="card" style="width:100%; max-width:410px; max-height:90vh; overflow-y:auto;">
+    <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+      <strong id="im-title">Добавить позицию</strong>
+      <button onclick="closeItemModal()" class="btn-sm" style="background:#e2e8f0; color:#000;">✕</button>
+    </div>
+
+    <div id="im-qr-box" class="hidden" style="background:#f8fafc; padding:8px; border-radius:10px; margin-bottom:10px; border:1px dashed #94a3b8;">
+      <div class="row" style="justify-content:space-between;">
+        <span style="font-size:12px; font-weight:bold;">🧾 Сканер QR кассового чека</span>
+        <button onclick="startReceiptCam()" class="btn-amber btn-sm">📷 Сканировать чек</button>
+      </div>
+      <video id="rec-video" class="hidden" style="width:100%; border-radius:8px; margin-top:8px; background:#000;" playsinline></video>
+      <p id="rec-qr-info" style="font-size:11px; color:#059669; margin-top:4px;"></p>
+    </div>
+
+    <div id="im-price-pick-box" class="hidden">
+      <label style="font-size:11px; color:#64748b;">Выбрать из прайса (или вписать ниже вручную):</label>
+      <select id="im-price-sel" onchange="fillItemFromPrice()"></select>
+    </div>
+
+    <input id="im-name" placeholder="Наименование работы или материала">
+    <div class="row">
+      <input id="im-qty" type="number" step="0.01" value="1" placeholder="Кол-во" style="margin:0;">
+      <select id="im-unit" style="margin:0; width:95px;"><option value="шт">шт</option><option value="м">м</option><option value="уп">уп</option><option value="точка">точка</option><option value="компл">компл</option></select>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div style="flex:1;">
+        <label id="im-cost-lbl" style="font-size:11px; color:#64748b;">Себестоимость, ₽</label>
+        <input id="im-cost" type="number" placeholder="0" oninput="autoCalcClientPrice()" style="margin:0;">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:11px; color:#64748b;">Заказчику (+15%), ₽</label>
+        <input id="im-client" type="number" placeholder="0" style="margin:0;">
+      </div>
+    </div>
+    <button onclick="saveStageItem()" class="btn-green" style="margin-top:10px;">Сохранить в смету</button>
+  </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: СПИСАНИЕ СО СКЛАДА В ЭТАП -->
+<div id="stock-stage-modal" class="modal hidden">
+  <div class="card" style="width:100%; max-width:390px;">
+    <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+      <strong>📦 Взять материал со склада в этап</strong>
+      <button onclick="document.getElementById('stock-stage-modal').classList.add('hidden')" class="btn-sm" style="background:#e2e8f0; color:#000;">✕</button>
+    </div>
+    <select id="ss-cons"></select>
+    <input id="ss-qty" type="number" min="0.1" step="0.1" value="1" placeholder="Количество">
+    <div class="row">
+      <div style="flex:1;">
+        <label style="font-size:11px; color:#64748b;">Себестоимость (если известна)</label>
+        <input id="ss-cost" type="number" placeholder="0" oninput="const v=Number(this.value)||0; document.getElementById('ss-client').value = v > 0 ? Math.round(v*1.15) : '';" style="margin:0;">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:11px; color:#64748b;">Цена заказчику, ₽</label>
+        <input id="ss-client" type="number" placeholder="Ввести вручную" style="margin:0;">
+      </div>
+    </div>
+    <button onclick="transferStockToStage()" class="btn-amber" style="margin-top:10px;">Перенести в этап</button>
+  </div>
+</div>
+
 <div id="zoom-modal" class="modal hidden" onclick="this.classList.add('hidden')" style="z-index:40; background:rgba(0,0,0,0.9);">
   <img id="zoom-img" style="max-width:96vw; max-height:92vh; object-fit:contain; border-radius:8px;">
 </div>
-
 <div id="print-area" class="hidden"></div>
 
-<!-- НАВИГАЦИЯ МОДУЛЯ ИНСТРУМЕНТА -->
+<!-- ПАНЕЛИ НАВИГАЦИИ -->
 <nav id="nav-tools" class="hidden">
-  <button onclick="tab('tools')" id="n-tools" class="active"><span>🔧</span>Инструмент</button>
-  <button onclick="tab('cons')" id="n-cons"><span>📦</span>Расходники</button>
-  <button onclick="tab('scan')" id="n-scan"><span>📷</span>QR-код</button>
-  <button onclick="tab('logs')" id="n-logs"><span>📋</span>Журнал</button>
-  <button onclick="tab('admin')" id="n-admin" class="hidden"><span>⚙️</span>Админ</button>
+  <button onclick="tab('tools')" id="n-tools" class="nb-blue active"><span>🔧</span>Инструмент</button>
+  <button onclick="tab('cons')" id="n-cons" class="nb-green"><span>📦</span>Склад</button>
+  <button onclick="tab('scan')" id="n-scan" class="nb-amber"><span>📷</span>QR-код</button>
+  <button onclick="tab('logs')" id="n-logs" class="nb-purple"><span>📋</span>Журнал</button>
+  <button onclick="tab('admin')" id="n-admin" class="nb-red hidden"><span>⚙️</span>Админ</button>
 </nav>
 
-<!-- НАВИГАЦИЯ МОДУЛЯ РАБОТ И ЗП -->
-<nav id="nav-salary" class="hidden">
-  <button onclick="wtab('my')" id="nw-my" class="active"><span>💳</span>Мой баланс</button>
-  <button onclick="wtab('add')" id="nw-add"><span>➕</span>Сдать работу</button>
-  <button onclick="wtab('price')" id="nw-price"><span>🏷️</span>Прайс</button>
-  <button onclick="wtab('admin')" id="nw-admin" class="hidden"><span>💼</span>Расчёт ЗП</button>
+<nav id="nav-projects" class="hidden">
+  <button onclick="ptab('objs')" id="np-objs" class="nb-blue active"><span>🏗️</span>Объекты</button>
+  <button onclick="ptab('work')" id="np-work" class="nb-green"><span>👷</span>Работы / ЗП</button>
+  <button onclick="ptab('overhead')" id="np-overhead" class="nb-amber hidden"><span>🧾</span>Расходы</button>
+  <button onclick="ptab('reports')" id="np-reports" class="nb-purple hidden"><span>📈</span>Отчёты</button>
 </nav>
 
-<script>
-  // === ВПИШИТЕ ВАШИ КЛЮЧИ СЮДА ===
-  const SB_URL = 'https://hedvmvvagozcnfufvnnh.supabase.co';
-  const SB_KEY = 'sb_publishable_ROfy0OkzwSF-mA9xZEt0UQ_dZ0agsaQ';
-  // ================================
-
-  let user = null, tools = [], emps = [], objs = [], cons = [], wTypes = [], wLogs = [], salPays = [];
-  let flt = 'all', camStream = null, scanTimer = null, curConsId = null;
-
-  async function api(path, method = 'GET', body = null) {
-    const opt = { method, headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' } };
-    if (body) opt.body = JSON.stringify(body);
-    const res = await fetch(SB_URL + '/rest/v1/' + path, opt);
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  }
-
-  async function uploadPhoto(id) {
-    const inp = document.getElementById(id);
-    if (!inp || !inp.files || !inp.files.length) return null;
-    const rawFile = inp.files.item(0);
-    const blob = await new Promise(resolve => {
-      const img = new Image();
-      img.onload = () => {
-        const scale = Math.min(1, 1200 / img.width);
-        const c = document.createElement('canvas');
-        c.width = Math.round(img.width * scale);
-        c.height = Math.round(img.height * scale);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        c.toBlob(b => resolve(b || rawFile), 'image/jpeg', 0.8);
-      };
-      img.onerror = () => resolve(rawFile);
-      img.src = URL.createObjectURL(rawFile);
-    });
-    const fn = Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.jpg';
-    const res = await fetch(`${SB_URL}/storage/v1/object/tool-photos/${fn}`, {
-      method: 'POST', headers: { 'apikey': SB_KEY, 'Content-Type': 'image/jpeg' }, body: blob
-    });
-    return res.ok ? `${SB_URL}/storage/v1/object/public/tool-photos/${fn}` : null;
-  }
-
-  window.onload = async () => {
-    try {
-      emps = await api('employees?select=*&order=name.asc');
-      document.getElementById('login-emp').innerHTML = emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-      const now = new Date();
-      document.getElementById('sal-month').value = now.toISOString().slice(0, 7);
-    } catch (e) { document.getElementById('err-msg').textContent = 'Ошибка подключения: проверьте ключи'; }
-  };
-
-  function doLogin() {
-    const id = Number(document.getElementById('login-emp').value);
-    const pin = document.getElementById('login-pin').value.trim();
-    user = emps.find(e => e.id === id);
-    if (!user || user.pin !== pin) { document.getElementById('err-msg').textContent = 'Неверный ПИН-код'; return; }
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('top-bar').classList.remove('hidden');
-    document.getElementById('user-title').textContent = user.name;
-    if (user.role === 'admin') {
-      document.getElementById('n-admin').classList.remove('hidden');
-      document.getElementById('admin-add-cons').classList.remove('hidden');
-      document.getElementById('nw-admin').classList.remove('hidden');
-      document.getElementById('admin-add-price').classList.remove('hidden');
-    }
-    refresh();
-    openHub();
-  }
-
-  function openHub() {
-    stopCam();
-    document.getElementById('hub-screen').classList.remove('hidden');
-    document.getElementById('mod-tools').classList.add('hidden');
-    document.getElementById('mod-salary').classList.add('hidden');
-    document.getElementById('nav-tools').classList.add('hidden');
-    document.getElementById('nav-salary').classList.add('hidden');
-    document.getElementById('btn-home').classList.add('hidden');
-  }
-
-  function openModule(m) {
-    document.getElementById('hub-screen').classList.add('hidden');
-    document.getElementById('btn-home').classList.remove('hidden');
-    if (m === 'tools') {
-      document.getElementById('mod-tools').classList.remove('hidden');
-      document.getElementById('nav-tools').classList.remove('hidden');
-      tab('tools');
-    } else {
-      document.getElementById('mod-salary').classList.remove('hidden');
-      document.getElementById('nav-salary').classList.remove('hidden');
-      wtab('my');
-    }
-  }
-  async function refresh() {
-    [tools, objs, emps, cons, wTypes, wLogs, salPays] = await Promise.all([
-      api('tools?select=*&order=inv_number.asc'),
-      api('objects?select=*&is_active=eq.true&order=name.asc'),
-      api('employees?select=*&order=name.asc'),
-      api('consumables?select=*&order=name.asc'),
-      api('work_types?select=*&order=name.asc'),
-      api('work_logs?select=*&order=created_at.desc'),
-      api('salary_payments?select=*&order=created_at.desc')
-    ]);
-    objs.sort((a, b) => a.id === 1 ? -1 : b.id === 1 ? 1 : a.name.localeCompare(b.name, 'ru'));
-    if (user) {
-      const freshUser = emps.find(e => e.id === user.id);
-      if (freshUser) user = freshUser;
-    }
-    renderTools(); renderCons(); renderAdminLists(); renderSalary();
-  }
-
-  function setFlt(f) { flt = f; renderTools(); }
-
-  function renderTools() {
-    const q = document.getElementById('search').value.toLowerCase();
-    const st = { stock: 'На складе', work: 'В работе', repair: 'В ремонте' };
-    document.getElementById('tools-list').innerHTML = tools
-      .filter(t => (flt === 'all' || t.status === flt) && (t.name.toLowerCase().includes(q) || t.inv_number.toLowerCase().includes(q)))
-      .map(t => {
-        const h = emps.find(e => e.id === t.holder_id), o = objs.find(x => x.id === t.object_id);
-        return `<div class="card" onclick="openTool(${t.id})" style="cursor:pointer;">
-          <div class="row" style="justify-content:space-between;"><strong>${t.inv_number} — ${t.name}</strong><span class="badge ${t.status}">${st[t.status]}</span></div>
-          <div style="font-size:12px; color:#64748b; margin-top:6px;">📍 ${o ? o.name : 'Склад'} ${h ? '| 👷 ' + h.name : ''}</div>
-        </div>`;
-      }).join('');
-  }
-
-  function getPhotos(t) {
-    if (!t.photo_url) return [];
-    if (t.photo_url.startsWith('[')) {
-      try { return JSON.parse(t.photo_url); } catch (e) { return []; }
-    }
-    return [t.photo_url];
-  }
-
-  function zoomImg(src) {
-    document.getElementById('zoom-img').src = src;
-    document.getElementById('zoom-modal').classList.remove('hidden');
-  }
-
-  async function setMainPhoto(id, idx) {
-    const t = tools.find(x => x.id === id);
-    const arr = getPhotos(t);
-    const [chosen] = arr.splice(idx, 1);
-    arr.unshift(chosen);
-    await api('tools?id=eq.' + id, 'PATCH', { photo_url: JSON.stringify(arr) });
-    await refresh(); openTool(id);
-  }
-
-  async function delPhoto(id, idx) {
-    if (!confirm('Удалить это фото?')) return;
-    const t = tools.find(x => x.id === id);
-    const arr = getPhotos(t);
-    arr.splice(idx, 1);
-    await api('tools?id=eq.' + id, 'PATCH', { photo_url: arr.length ? JSON.stringify(arr) : null });
-    await refresh(); openTool(id);
-  }
-
-  async function addCardPhoto(id) {
-    const t = tools.find(x => x.id === id);
-    const arr = getPhotos(t);
-    if (arr.length >= 3) return alert('Максимум 3 фото');
-    const url = await uploadPhoto('m-new-photo');
-    if (!url) return alert('Не удалось загрузить фото');
-    arr.push(url);
-    await api('tools?id=eq.' + id, 'PATCH', { photo_url: JSON.stringify(arr) });
-    await refresh(); openTool(id);
-  }
-
-  function openTool(id) {
-    const t = tools.find(x => x.id === id);
-    if (!t) return;
-    const h = emps.find(e => e.id === t.holder_id), o = objs.find(x => x.id === t.object_id);
-    document.getElementById('m-inv').textContent = t.inv_number + (t.serial_number ? ' (S/N: ' + t.serial_number + ')' : '');
-    document.getElementById('m-name').textContent = t.name;
-
-    const photos = getPhotos(t);
-    const img = document.getElementById('m-photo');
-    if (photos.length) {
-      img.src = photos.at(0);
-      img.onclick = () => zoomImg(photos.at(0));
-      img.classList.remove('hidden');
-    } else {
-      img.classList.add('hidden');
-    }
-
-    const oldGal = document.getElementById('m-gallery');
-    if (oldGal) oldGal.remove();
-
-    let galHtml = '<div id="m-gallery" style="margin-bottom:10px;">';
-    if (photos.length) {
-      galHtml += '<div style="display:flex; gap:6px; margin-bottom:8px;">' + photos.map((p, i) => `
-        <div style="flex:1; border:2px solid ${i === 0 ? '#2563eb' : '#e2e8f0'}; border-radius:8px; padding:3px; text-align:center;">
-          <img src="${p}" onclick="zoomImg('${p}')" style="width:100%; height:58px; object-fit:contain; cursor:zoom-in; background:#f8fafc; border-radius:5px;">
-          ${user.role === 'admin' ? `<div style="display:flex; gap:3px; margin-top:3px;">
-            ${i > 0 ? `<button onclick="setMainPhoto(${t.id},${i})" class="btn-sm" style="flex:1; padding:2px; font-size:10px;">⭐ Главн.</button>` : '<span style="flex:1; font-size:10px; color:#2563eb; font-weight:bold;">Главная</span>'}
-            <button onclick="delPhoto(${t.id},${i})" class="btn-red btn-sm" style="padding:2px 5px; font-size:10px;">✕</button>
-          </div>` : ''}
-        </div>`).join('') + '</div>';
-    }
-    if (user.role === 'admin' && photos.length < 3) {
-      galHtml += `<div class="row" style="margin-top:4px;">
-        <input id="m-new-photo" type="file" accept="image/*" style="margin:0; font-size:11px; padding:6px;">
-        <button onclick="addCardPhoto(${t.id})" class="btn-dark btn-sm">+ Фото (${photos.length}/3)</button>
-      </div>`;
-    }
-    galHtml += '</div>';
-    img.insertAdjacentHTML('afterend', galHtml);
-
-    const dtText = t.purchase_date ? new Date(t.purchase_date).toLocaleDateString('ru-RU') : '—';
-    const prText = t.price ? Number(t.price).toLocaleString('ru-RU') + ' ₽' : '—';
-    document.getElementById('m-info').innerHTML = `Место: <strong>${o ? o.name : 'Склад'}</strong> | У кого: <strong>${h ? h.name : 'Никого'}</strong><br>Поступил: <strong>${dtText}</strong> | Стоимость: <strong>${prText}</strong>`;
-
-    const objOpt = objs.filter(x => x.id !== 1).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
-    const empOpt = emps.filter(x => x.id !== user.id).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
-
-    let html = '';
-    if (t.status === 'stock') {
-      html = `<select id="a-obj">${objOpt || '<option value="1">Склад</option>'}</select><button onclick="actTake(${t.id})">Взять инструмент себе</button>`;
-    } else if (t.status === 'work') {
-      html = `<button onclick="actReturn(${t.id})" class="btn-green">✅ Вернуть на склад</button>
-              <select id="a-emp">${empOpt}</select><select id="a-obj2">${objOpt || '<option value="1">Текущий объект</option>'}</select>
-              <button onclick="actTransfer(${t.id})" class="btn-amber">🤝 Передать коллеге</button>
-              <input id="a-comm" placeholder="Опишите поломку..."><input id="a-rep-photo" type="file" accept="image/*" style="font-size:12px;">
-              <button id="btn-rep" onclick="actRepair(${t.id})" class="btn-red">🛠️ В ремонт</button>`;
-    } else if (user.role === 'admin') {
-      html = `<button onclick="actReturn(${t.id})" class="btn-green">✅ Вернуть из ремонта</button>`;
-    }
-    document.getElementById('m-actions').innerHTML = html;
-    document.getElementById('m-admin-edit').innerHTML = user.role === 'admin'
-      ? `<div class="row"><button onclick="editTool(${t.id})" class="btn-dark btn-sm" style="flex:1;">✏️ Изменить</button><button onclick="delTool(${t.id})" class="btn-red btn-sm" style="flex:1;">🗑️ Удалить</button></div>` : '';
-    document.getElementById('m-qr').src = makeQR(t.inv_number);
-
-    const oldBtn = document.getElementById('m-print-btn');
-    if (oldBtn) oldBtn.remove();
-    document.getElementById('m-qr').insertAdjacentHTML('afterend', `<div id="m-print-btn" style="margin-top:10px;"><button onclick="printOneQR(${t.id})" class="btn-dark" style="cursor:pointer;">🖨️ Печать QR</button></div>`);
-
-    document.getElementById('modal').classList.remove('hidden');
-  }
-  async function editTool(id) {
-    const t = tools.find(x => x.id === id);
-    const n = prompt('Новое название:', t.name);
-    if (!n) return;
-    const s = prompt('Серийный номер:', t.serial_number || '');
-    const d = prompt('Дата поступления (ГГГГ-ММ-ДД):', t.purchase_date || '');
-    const p = prompt('Стоимость (руб.):', t.price || '');
-    await api('tools?id=eq.' + id, 'PATCH', {
-      name: n.trim(), serial_number: (s || '').trim(),
-      purchase_date: (d && d.trim()) ? d.trim() : null,
-      price: (p && !isNaN(Number(p))) ? Number(p) : null
-    });
-    document.getElementById('modal').classList.add('hidden'); refresh();
-  }
-
-  async function delTool(id) {
-    if (!confirm('Удалить эту карточку навсегда?')) return;
-    await api('logs?tool_id=eq.' + id, 'DELETE');
-    await api('tools?id=eq.' + id, 'DELETE');
-    document.getElementById('modal').classList.add('hidden'); refresh();
-  }
-
-  async function actTake(id) {
-    const objId = Number(document.getElementById('a-obj').value) || 1;
-    await api('tools?id=eq.' + id, 'PATCH', { status: 'work', holder_id: user.id, object_id: objId });
-    await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Взял в работу', object_id: objId });
-    document.getElementById('modal').classList.add('hidden'); refresh();
-  }
-
-  async function actReturn(id) {
-    await api('tools?id=eq.' + id, 'PATCH', { status: 'stock', holder_id: null, object_id: 1 });
-    await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Вернул на склад', object_id: 1 });
-    document.getElementById('modal').classList.add('hidden'); refresh();
-  }
-
-  async function actTransfer(id) {
-    const empId = Number(document.getElementById('a-emp').value), objId = Number(document.getElementById('a-obj2').value) || 1;
-    const next = emps.find(e => e.id === empId);
-    await api('tools?id=eq.' + id, 'PATCH', { status: 'work', holder_id: empId, object_id: objId });
-    await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Передал коллеге', object_id: objId, comment: next ? next.name : '' });
-    document.getElementById('modal').classList.add('hidden'); refresh();
-  }
-
-  async function actRepair(id) {
-    document.getElementById('btn-rep').textContent = 'Загрузка...';
-    const comment = document.getElementById('a-comm').value.trim(), photoUrl = await uploadPhoto('a-rep-photo');
-    const upd = { status: 'repair', holder_id: null, object_id: 1 };
-    if (photoUrl) {
-      const arr = getPhotos(tools.find(x => x.id === id));
-      if (arr.length < 3) arr.push(photoUrl); else arr.splice(2, 1, photoUrl);
-      upd.photo_url = JSON.stringify(arr);
-    }
-    await api('tools?id=eq.' + id, 'PATCH', upd);
-    await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'В ремонт', object_id: 1, comment });
-    document.getElementById('modal').classList.add('hidden'); refresh();
-  }
-
-  function renderCons() {
-    document.getElementById('cons-list').innerHTML = cons.map(c => `
-      <div class="card row" style="justify-content:space-between; cursor:pointer;" onclick="openCons(${c.id})">
-        <strong>${c.name}</strong><span class="badge ${c.qty > 0 ? 'stock' : 'repair'}">${c.qty} ${c.unit}</span>
-      </div>`).join('');
-  }
-
-  function openCons(id) {
-    curConsId = id;
-    const c = cons.find(x => x.id === id);
-    document.getElementById('cm-title').textContent = c.name;
-    document.getElementById('cm-stock').textContent = `Остаток: ${c.qty} ${c.unit}`;
-    document.getElementById('cm-qty').value = 1;
-    document.getElementById('cm-obj').innerHTML = objs.filter(x => x.id !== 1).map(x => `<option value="${x.id}">${x.name}</option>`).join('') || '<option value="1">На объект</option>';
-    document.getElementById('cm-admin-box').classList.toggle('hidden', user.role !== 'admin');
-    document.getElementById('cons-modal').classList.remove('hidden');
-  }
-
-  async function takeCons() {
-    const c = cons.find(x => x.id === curConsId), val = Number(document.getElementById('cm-qty').value), objId = Number(document.getElementById('cm-obj').value) || 1;
-    if (val <= 0 || val > c.qty) return alert('Недостаточно на складе!');
-    await api('consumables?id=eq.' + c.id, 'PATCH', { qty: c.qty - val });
-    await api('logs', 'POST', { employee_id: user.id, action: `Взял расходник: ${c.name}`, object_id: objId, comment: `${val} ${c.unit}` });
-    document.getElementById('cons-modal').classList.add('hidden'); refresh();
-  }
-
-  async function addConsQty() {
-    const c = cons.find(x => x.id === curConsId), val = Number(document.getElementById('cm-qty').value);
-    if (val <= 0) return;
-    await api('consumables?id=eq.' + c.id, 'PATCH', { qty: c.qty + val });
-    await api('logs', 'POST', { employee_id: user.id, action: `Пополнил склад: ${c.name}`, object_id: 1, comment: `+${val} ${c.unit}` });
-    document.getElementById('cons-modal').classList.add('hidden'); refresh();
-  }
-
-  async function addCons() {
-    const name = document.getElementById('c-name').value.trim(), qty = Number(document.getElementById('c-qty').value) || 0, unit = document.getElementById('c-unit').value;
-    if (!name) return;
-    await api('consumables', 'POST', { name, qty, unit });
-    document.getElementById('c-name').value = ''; document.getElementById('c-qty').value = ''; refresh();
-  }
-
-  async function delCons() {
-    if (!confirm('Удалить позицию?')) return;
-    await api('consumables?id=eq.' + curConsId, 'DELETE');
-    document.getElementById('cons-modal').classList.add('hidden'); refresh();
-  }
-
-  function renderAdminLists() {
-    const activeObjs = objs.filter(o => o.id !== 1);
-    const cntEl = document.getElementById('objs-count');
-    if (cntEl) cntEl.textContent = activeObjs.length;
-    const q = (document.getElementById('o-search')?.value || '').toLowerCase().trim();
-    const filteredObjs = objs.filter(o => o.name.toLowerCase().includes(q));
-    document.getElementById('admin-objs-list').innerHTML = filteredObjs.length
-      ? filteredObjs.map(o => `<div class="list-row"><span>${o.name}</span>${o.id !== 1 ? `<button onclick="closeObj(${o.id})" class="btn-red btn-sm">Закрыть</button>` : '<span style="font-size:11px; color:#94a3b8;">База</span>'}</div>`).join('')
-      : '<div style="font-size:13px; color:#94a3b8; text-align:center; padding:8px;">Ничего не найдено</div>';
-
-    document.getElementById('admin-emps-list').innerHTML = emps.map(e => `
-      <div class="list-row">
-        <div><strong>${e.name}</strong><br><small style="color:#64748b;">ПИН: ${e.pin} | Оклад: ${Number(e.base_salary || 0).toLocaleString('ru-RU')} ₽</small></div>
-        <div class="row">
-          <button onclick="setSalary(${e.id})" class="btn-dark btn-sm">₽ Оклад</button>
-          ${e.id !== user.id ? `<button onclick="delEmp(${e.id})" class="btn-red btn-sm">✕</button>` : ''}
-        </div>
-      </div>`).join('');
-  }
-
-  async function setSalary(id) {
-    const e = emps.find(x => x.id === id);
-    const val = prompt(`Фиксированный оклад в месяц для ${e.name} (руб.):`, e.base_salary || 0);
-    if (val === null) return;
-    await api('employees?id=eq.' + id, 'PATCH', { base_salary: Number(val) || 0 });
-    refresh();
-  }
-
-  async function closeObj(id) { if (confirm('Закрыть объект?')) { await api('objects?id=eq.' + id, 'PATCH', { is_active: false }); refresh(); } }
-  async function delEmp(id) { if (confirm('Удалить сотрудника?')) { await api('employees?id=eq.' + id, 'DELETE'); refresh(); } }
-  async function addTool() {
-    const name = document.getElementById('t-name').value.trim(), serial_number = document.getElementById('t-ser').value.trim();
-    const purchase_date = document.getElementById('t-date').value || null;
-    const price = document.getElementById('t-price').value ? Number(document.getElementById('t-price').value) : null;
-    if (!name) return;
-    document.getElementById('btn-add-tool').textContent = 'Сохранение...';
-    const photo_url = await uploadPhoto('t-photo');
-    await api('tools', 'POST', { name, serial_number, purchase_date, price, status: 'stock', object_id: 1, photo_url });
-    document.getElementById('t-name').value = ''; document.getElementById('t-ser').value = '';
-    document.getElementById('t-date').value = ''; document.getElementById('t-price').value = ''; document.getElementById('t-photo').value = '';
-    document.getElementById('btn-add-tool').textContent = 'Добавить на склад';
-    alert('Добавлено!'); refresh();
-  }
-
-  async function addObj() { const name = document.getElementById('o-name').value.trim(); if (name) { await api('objects', 'POST', { name }); document.getElementById('o-name').value = ''; refresh(); } }
-  async function addEmp() {
-    const name = document.getElementById('e-name').value.trim(), pin = document.getElementById('e-pin').value.trim(), role = document.getElementById('e-role').value;
-    if (!name || pin.length !== 4) return alert('Нужно ФИО и 4 цифры ПИНа');
-    await api('employees', 'POST', { name, pin, role, base_salary: 0 });
-    document.getElementById('e-name').value = ''; document.getElementById('e-pin').value = ''; refresh();
-  }
-
-  function makeQR(txt) {
-    if (window.qrcode) { const qr = qrcode(0, 'M'); qr.addData(txt); qr.make(); return qr.createDataURL(6, 4); }
-    return '';
-  }
-
-  function printAllQR() {
-    document.getElementById('print-area').innerHTML = tools.map(t => `<div class="qr-sticker"><img src="${makeQR(t.inv_number)}" style="width:110px;height:110px;"><div style="font-weight:bold;">${t.inv_number}</div><div style="font-size:11px;">${t.name}</div></div>`).join('');
-    setTimeout(() => window.print(), 300);
-  }
-
-  function printOneQR(id) {
-    const t = tools.find(x => x.id === id);
-    if (!t) return;
-    document.getElementById('print-area').innerHTML = `<div class="qr-sticker"><img src="${makeQR(t.inv_number)}" style="width:110px;height:110px;"><div style="font-weight:bold;">${t.inv_number}</div><div style="font-size:11px;">${t.name}</div></div>`;
-    setTimeout(() => window.print(), 300);
-  }
-
-  function exportExcel() {
-    if (typeof XLSX === 'undefined') return alert('Подождите загрузки библиотеки Excel');
-    const now = new Date();
-    const dateStr = now.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const fileDate = now.toLocaleDateString('ru-RU').replace(/\./g, '-');
-    const st = { stock: 'На складе', work: 'В работе', repair: 'В ремонте' };
-    const toolsRows = [['ОТЧЁТ ПО УЧЁТУ ИНСТРУМЕНТА'], ['Дата и время формирования:', dateStr], [], ['Инв. номер', 'Название', 'Серийный номер', 'Дата поступления', 'Стоимость, ₽', 'Статус', 'Ответственный', 'Текущий объект']];
-    let totalSum = 0;
-    tools.forEach(t => {
-      const h = emps.find(e => e.id === t.holder_id), o = objs.find(x => x.id === t.object_id);
-      const dt = t.purchase_date ? new Date(t.purchase_date).toLocaleDateString('ru-RU') : '';
-      const pr = t.price ? Number(t.price) : 0; totalSum += pr;
-      toolsRows.push([t.inv_number, t.name, t.serial_number || '', dt, pr || '', st[t.status] || t.status, h ? h.name : '—', o ? o.name : 'Склад']);
-    });
-    toolsRows.push([], ['', '', '', 'ИТОГО:', totalSum, '', '', '']);
-    const consRows = [['ОСТАТКИ РАСХОДНИКОВ НА СКЛАДЕ'], ['Дата и время формирования:', dateStr], [], ['Наименование', 'Остаток', 'Ед. изм.']];
-    cons.forEach(c => { consRows.push([c.name, c.qty, c.unit]); });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(toolsRows), 'Инструмент');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(consRows), 'Расходники');
-    XLSX.writeFile(wb, `Отчет_склад_${fileDate}.xlsx`);
-  }
-
-  function downloadTemplate() {
-    if (typeof XLSX === 'undefined') return alert('Подождите загрузки библиотеки Excel');
-    const wb = XLSX.utils.book_new();
-    const wsT = XLSX.utils.json_to_sheet([{ 'Название': 'Перфоратор Bosch GBH 2-26', 'Серийный номер': 'SN-123456', 'Дата поступления (ГГГГ-ММ-ДД)': '2026-11-25', 'Стоимость': 18500 }]);
-    const wsC = XLSX.utils.json_to_sheet([{ 'Название': 'Бур SDS-plus 8x160', 'Количество': 20, 'Ед. изм.': 'шт' }]);
-    XLSX.utils.book_append_sheet(wb, wsT, 'Инструмент');
-    XLSX.utils.book_append_sheet(wb, wsC, 'Расходники');
-    XLSX.writeFile(wb, 'Шаблон_загрузки_склад.xlsx');
-  }
-
-  async function importExcel(inp) {
-    const file = inp.files.item(0);
-    if (!file) return;
-    try {
-      const wb = XLSX.read(await file.arrayBuffer());
-      let addedT = 0, addedC = 0;
-      if (wb.Sheets['Инструмент']) {
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Инструмент']);
-        const payload = rows.filter(r => r['Название'] && String(r['Название']).trim()).map(r => {
-          const rd = r['Дата поступления (ГГГГ-ММ-ДД)'] || r['Дата поступления'], rp = r['Стоимость'];
-          return { name: String(r['Название']).trim(), serial_number: r['Серийный номер'] ? String(r['Серийный номер']).trim() : '', purchase_date: rd ? String(rd).trim() : null, price: (rp !== undefined && rp !== '' && !isNaN(Number(rp))) ? Number(rp) : null, status: 'stock', object_id: 1 };
-        });
-        if (payload.length) { await api('tools', 'POST', payload); addedT = payload.length; }
-      }
-      if (wb.Sheets['Расходники']) {
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Расходники']);
-        const payload = rows.filter(r => r['Название'] && String(r['Название']).trim()).map(r => ({ name: String(r['Название']).trim(), qty: Number(r['Количество']) || 0, unit: r['Ед. изм.'] ? String(r['Ед. изм.']).trim() : 'шт' }));
-        if (payload.length) { await api('consumables', 'POST', payload); addedC = payload.length; }
-      }
-      inp.value = ''; alert(`Загружено!\nИнструментов: ${addedT}\nРасходников: ${addedC}`); refresh();
-    } catch (e) { alert('Ошибка: ' + e.message); inp.value = ''; }
-  }
-
-  function findManual() {
-    const code = document.getElementById('man-inv').value.trim().toUpperCase(), t = tools.find(x => x.inv_number === code);
-    if (t) openTool(t.id); else alert('Не найдено: ' + code);
-  }
-
-  async function startCam() {
-    const st = document.getElementById('scan-status'), vid = document.getElementById('qr-video');
-    if (typeof jsQR === 'undefined') { st.textContent = 'Файл jsQR.js не подключён'; return; }
-    try {
-      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      vid.srcObject = camStream; vid.setAttribute('playsinline', true); vid.classList.remove('hidden'); await vid.play();
-      st.textContent = 'Наведите камеру на QR-код...';
-      const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', { willReadFrequently: true });
-      scanTimer = setInterval(() => {
-        if (vid.readyState === vid.HAVE_ENOUGH_DATA) {
-          canvas.width = vid.videoWidth; canvas.height = vid.videoHeight;
-          ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const code = jsQR(imgData.data, imgData.width, imgData.height);
-          if (code && code.data) {
-            const val = code.data.trim().toUpperCase(), found = tools.find(x => x.inv_number === val);
-            stopCam(); if (found) openTool(found.id); else alert('Неизвестный код: ' + val);
-          }
-        }
-      }, 300);
-    } catch (e) { st.textContent = 'Нет доступа к камере.'; }
-  }
-
-  function stopCam() {
-    clearInterval(scanTimer);
-    if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
-    document.getElementById('qr-video').classList.add('hidden'); document.getElementById('scan-status').textContent = '';
-  }
-
-  async function tab(t) {
-    stopCam();
-    ['tools', 'cons', 'scan', 'logs', 'admin'].forEach(x => {
-      document.getElementById('tab-' + x).classList.add('hidden');
-      document.getElementById('n-' + x).classList.remove('active');
-    });
-    document.getElementById('tab-' + t).classList.remove('hidden');
-    document.getElementById('n-' + t).classList.add('active');
-    if (t === 'logs') {
-      const data = await api('logs?select=*&order=created_at.desc&limit=40');
-      document.getElementById('logs-list').innerHTML = data.map(l => {
-        const tl = tools.find(x => x.id === l.tool_id), em = emps.find(x => x.id === l.employee_id), ob = objs.find(x => x.id === l.object_id);
-        return `<div class="card" style="font-size:13px;"><strong>${tl ? tl.inv_number + ' ' + tl.name : l.action}</strong><br>${em ? em.name : ''}: ${tl ? l.action : ''} (${ob ? ob.name : ''}) ${l.comment ? '— ' + l.comment : ''}</div>`;
-      }).join('');
-    }
-  }
-  function wtab(t) {
-    ['my', 'add', 'price', 'admin'].forEach(x => {
-      document.getElementById('wtab-' + x).classList.add('hidden');
-      document.getElementById('nw-' + x).classList.remove('active');
-    });
-    document.getElementById('wtab-' + t).classList.remove('hidden');
-    document.getElementById('nw-' + t).classList.add('active');
-    renderSalary();
-  }
-
-  function calcWorkPreview() {
-    const wt = wTypes.find(x => x.id === Number(document.getElementById('w-type').value));
-    const qty = Number(document.getElementById('w-qty').value) || 0;
-    document.getElementById('w-preview').textContent = wt ? `К начислению: ${(wt.rate * qty).toLocaleString('ru-RU')} ₽ (${wt.rate} ₽/${wt.unit})` : '';
-  }
-
-  async function submitWork() {
-    const objId = Number(document.getElementById('w-obj').value) || 1;
-    const wt = wTypes.find(x => x.id === Number(document.getElementById('w-type').value));
-    const qty = Number(document.getElementById('w-qty').value) || 0;
-    const comment = document.getElementById('w-comm').value.trim();
-    if (!wt || qty <= 0) return alert('Укажите вид работ и объём');
-    const total = wt.rate * qty;
-    const autoApprove = user.role === 'admin' ? 'approved' : 'pending';
-    await api('work_logs', 'POST', {
-      employee_id: user.id, object_id: objId, work_type_id: wt.id,
-      work_name: `${wt.name} (${qty} ${wt.unit})`, qty, rate: wt.rate, total, status: autoApprove, comment
-    });
-    document.getElementById('w-qty').value = 1; document.getElementById('w-comm').value = '';
-    alert(user.role === 'admin' ? 'Работа записана и подтверждена!' : 'Отправлено руководителю на проверку!');
-    refresh(); wtab('my');
-  }
-
-  async function approveWork(id) {
-    await api('work_logs?id=eq.' + id, 'PATCH', { status: 'approved' });
-    refresh();
-  }
-
-  async function rejectWork(id) {
-    if (!confirm('Отклонить и удалить эту запись о работе?')) return;
-    await api('work_logs?id=eq.' + id, 'DELETE');
-    refresh();
-  }
-
-  async function addWorkType() {
-    const name = document.getElementById('p-name').value.trim();
-    const rate = Number(document.getElementById('p-rate').value) || 0;
-    const unit = document.getElementById('p-unit').value;
-    if (!name || rate <= 0) return alert('Введите название и цену');
-    await api('work_types', 'POST', { name, rate, unit });
-    document.getElementById('p-name').value = ''; document.getElementById('p-rate').value = '';
-    refresh();
-  }
-
-  async function delWorkType(id) {
-    if (!confirm('Удалить расценку из прайса?')) return;
-    await api('work_types?id=eq.' + id, 'DELETE');
-    refresh();
-  }
-
-  async function addPayment() {
-    const employee_id = Number(document.getElementById('pay-emp').value);
-    const amount = Number(document.getElementById('pay-sum').value) || 0;
-    const pay_type = document.getElementById('pay-type').value;
-    const comment = document.getElementById('pay-comm').value.trim();
-    if (!employee_id || amount <= 0) return alert('Укажите сотрудника и сумму');
-    await api('salary_payments', 'POST', { employee_id, amount, pay_type, comment });
-    document.getElementById('pay-sum').value = ''; document.getElementById('pay-comm').value = '';
-    alert('Выплата проведена!'); refresh();
-  }
-
-  function renderSalary() {
-    if (!user) return;
-    const m = document.getElementById('sal-month').value || new Date().toISOString().slice(0, 7);
-
-    document.getElementById('w-obj').innerHTML = objs.filter(x => x.id !== 1).map(x => `<option value="${x.id}">${x.name}</option>`).join('') || '<option value="1">Объект</option>';
-    document.getElementById('w-type').innerHTML = wTypes.map(w => `<option value="${w.id}">${w.name} — ${w.rate} ₽/${w.unit}</option>`).join('');
-    document.getElementById('pay-emp').innerHTML = emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-    calcWorkPreview();
-
-    document.getElementById('price-list').innerHTML = wTypes.map(w => `
-      <div class="card row" style="justify-content:space-between;">
-        <div><strong>${w.name}</strong><br><small style="color:#64748b;">Единица: ${w.unit}</small></div>
-        <div class="row">
-          <span class="badge stock">${Number(w.rate).toLocaleString('ru-RU')} ₽</span>
-          ${user.role === 'admin' ? `<button onclick="delWorkType(${w.id})" class="btn-red btn-sm">✕</button>` : ''}
-        </div>
-      </div>`).join('');
-
-    const myApproved = wLogs.filter(w => w.employee_id === user.id && w.status === 'approved' && w.created_at.startsWith(m));
-    const myPending = wLogs.filter(w => w.employee_id === user.id && w.status === 'pending' && w.created_at.startsWith(m));
-    const myPays = salPays.filter(p => p.employee_id === user.id && p.created_at.startsWith(m));
-
-    const base = Number(user.base_salary || 0);
-    const pieceSum = myApproved.reduce((s, x) => s + Number(x.total || 0), 0);
-    const pendSum = myPending.reduce((s, x) => s + Number(x.total || 0), 0);
-    const paidSum = myPays.reduce((s, x) => s + Number(x.amount || 0), 0);
-    const rest = base + pieceSum - paidSum;
-
-    document.getElementById('my-balance-box').innerHTML = `
-      <div>Оклад: <strong>${base.toLocaleString('ru-RU')} ₽</strong></div>
-      <div>Сдельная (подтверждено): <strong>+${pieceSum.toLocaleString('ru-RU')} ₽</strong> ${pendSum > 0 ? `<small style="color:#fbbf24;">(ещё ${pendSum.toLocaleString('ru-RU')} ₽ на проверке)</small>` : ''}</div>
-      <div>Выплачено (авансы/ЗП): <strong>−${paidSum.toLocaleString('ru-RU')} ₽</strong></div>
-      <div style="border-top:1px solid rgba(255,255,255,0.2); margin-top:6px; padding-top:6px; font-size:17px;">Остаток к выплате: <strong style="color:#34d399;">${rest.toLocaleString('ru-RU')} ₽</strong></div>
-    `;
-
-    const myAllWorks = wLogs.filter(w => w.employee_id === user.id && w.created_at.startsWith(m));
-    document.getElementById('my-work-list').innerHTML =
-      myPays.map(p => `<div class="card" style="border-left:4px solid #2563eb; font-size:13px;"><strong>💸 ${p.pay_type}: −${Number(p.amount).toLocaleString('ru-RU')} ₽</strong> <small style="color:#64748b;">(${new Date(p.created_at).toLocaleDateString('ru-RU')})</small>${p.comment ? '<br>' + p.comment : ''}</div>`).join('') +
-      myAllWorks.map(w => {
-        const ob = objs.find(x => x.id === w.object_id);
-        return `<div class="card" style="font-size:13px;">
-          <div class="row" style="justify-content:space-between;"><strong>${w.work_name}</strong><span class="badge ${w.status === 'approved' ? 'stock' : 'work'}">${w.status === 'approved' ? '+' + Number(w.total).toLocaleString('ru-RU') + ' ₽' : '⏳ Проверка'}</span></div>
-          <div style="color:#64748b; margin-top:4px;">📍 ${ob ? ob.name : ''} | ${new Date(w.created_at).toLocaleDateString('ru-RU')} ${w.comment ? '— ' + w.comment : ''}</div>
-        </div>`;
-      }).join('');
-
-    if (user.role === 'admin') {
-      const pendList = wLogs.filter(w => w.status === 'pending');
-      document.getElementById('pending-cnt').textContent = pendList.length;
-      document.getElementById('pending-list').innerHTML = pendList.length
-        ? pendList.map(w => {
-            const em = emps.find(e => e.id === w.employee_id), ob = objs.find(x => x.id === w.object_id);
-            return `<div style="border-bottom:1px solid #f1f5f9; padding:8px 0; font-size:13px;">
-              <strong>${em ? em.name : ''}</strong> — ${w.work_name} = <strong>${Number(w.total).toLocaleString('ru-RU')} ₽</strong>
-              <div style="color:#64748b; margin:2px 0 6px;">📍 ${ob ? ob.name : ''} ${w.comment ? '(' + w.comment + ')' : ''}</div>
-              <div class="row">
-                <button onclick="approveWork(${w.id})" class="btn-green btn-sm" style="flex:1;">✅ Подтвердить</button>
-                <button onclick="rejectWork(${w.id})" class="btn-red btn-sm" style="width:auto;">✕</button>
-              </div>
-            </div>`;
-          }).join('')
-        : '<div style="font-size:13px; color:#94a3b8;">Нет неподтверждённых работ</div>';
-
-      document.getElementById('brigade-summary').innerHTML = emps.map(e => {
-        const b = Number(e.base_salary || 0);
-        const pc = wLogs.filter(w => w.employee_id === e.id && w.status === 'approved' && w.created_at.startsWith(m)).reduce((s, x) => s + Number(x.total || 0), 0);
-        const pd = salPays.filter(p => p.employee_id === e.id && p.created_at.startsWith(m)).reduce((s, x) => s + Number(x.amount || 0), 0);
-        return `<div class="list-row" style="font-size:13px;">
-          <div><strong>${e.name}</strong><br><small style="color:#64748b;">Оклад ${b.toLocaleString('ru-RU')} + Сдельн. ${pc.toLocaleString('ru-RU')} − Выпл. ${pd.toLocaleString('ru-RU')}</small></div>
-          <strong style="color:#059669;">${(b + pc - pd).toLocaleString('ru-RU')} ₽</strong>
-        </div>`;
-      }).join('');
-    }
-  }
-
-  function exportSalaryExcel() {
-    if (typeof XLSX === 'undefined') return alert('Подождите загрузки библиотеки Excel');
-    const m = document.getElementById('sal-month').value || new Date().toISOString().slice(0, 7);
-    const rows = [['РАСЧЁТНАЯ ВЕДОМОСТЬ БРИГАДЫ ЗА ' + m], [], ['Сотрудник', 'Оклад, ₽', 'Сдельная (подтв.), ₽', 'Всего начислено, ₽', 'Выплачено, ₽', 'Остаток к выплате, ₽']];
-    emps.forEach(e => {
-      const b = Number(e.base_salary || 0);
-      const pc = wLogs.filter(w => w.employee_id === e.id && w.status === 'approved' && w.created_at.startsWith(m)).reduce((s, x) => s + Number(x.total || 0), 0);
-      const pd = salPays.filter(p => p.employee_id === e.id && p.created_at.startsWith(m)).reduce((s, x) => s + Number(x.amount || 0), 0);
-      rows.push([e.name, b, pc, b + pc, pd, b + pc - pd]);
-    });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Зарплата_' + m);
-    XLSX.writeFile(wb, `Ведомость_ЗП_${m}.xlsx`);
-  }
-</script>
+<script src="app-core.js"></script>
+<script src="app-tools.js"></script>
+<script src="app-projects.js"></script>
 </body>
 </html>

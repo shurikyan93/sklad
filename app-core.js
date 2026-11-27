@@ -7,14 +7,13 @@ let wLogs = [], salPays = [], overheads = [];
 let tools = [], cons = [], tLogs = [];
 
 async function api(path, method = 'GET', body = null) {
-  const opts = {
-    method,
-    headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' }
-  };
+  const headers = { apikey: SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' };
+  if (SB_KEY.startsWith('eyJ')) headers.Authorization = 'Bearer ' + SB_KEY;
+  const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(`${SB_URL}/rest/v1/${path}`, opts);
   const txt = await res.text();
-  if (!res.ok) throw new Error(txt || res.status);
+  if (!res.ok) throw new Error(`${res.status}: ${txt}`);
   return txt ? JSON.parse(txt) : null;
 }
 

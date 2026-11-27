@@ -27,7 +27,7 @@ async function uploadToolPhoto(inpId) {
 function showToolTab(t) {
   curToolTab = t;
   stopCam();
-  ['tools', 'cons', 'scan', 'logs', 'qr'].forEach(x => {
+  ['tools', 'cons', 'scan', 'logs'].forEach(x => {
     const sec = document.getElementById('t-sec-' + x);
     const btn = document.getElementById('nt-' + x);
     if (sec) sec.classList.toggle('hidden', x !== t);
@@ -69,26 +69,15 @@ function renderToolsMod() {
       const tl = tools.find(x => x.id === l.tool_id);
       const em = emps.find(x => x.id === l.employee_id);
       const ob = objs.find(x => x.id === l.object_id);
+      const dt = l.created_at ? new Date(l.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
       return `<div class="card" style="font-size:13px;">
-        <strong>${tl ? (tl.inv_number || '') + ' ' + tl.name : l.action}</strong><br>
+        <div class="row" style="justify-content:space-between;margin-bottom:4px;">
+          <strong>${tl ? (tl.inv_number || '') + ' ' + tl.name : l.action}</strong>
+          <small style="color:#64748b;">${dt}</small>
+        </div>
         ${em ? em.name : ''}: ${tl ? l.action : ''} (${ob ? ob.name : 'Склад'}) ${l.comment ? '— ' + l.comment : ''}
       </div>`;
     }).join('') || '<div class="card" style="text-align:center;color:#94a3b8;">Журнал пуст</div>';
-  } else if (curToolTab === 'qr') {
-    document.getElementById('qr-batch').innerHTML = tools.map(t => {
-      const code = t.inv_number || ('TOOL-' + t.id);
-      return `<div class="card row" style="justify-content:space-between;">
-        <div><strong>${code}</strong><br><small>${t.name}</small></div>
-        <div class="row">
-          <button onclick="printOneQR(${t.id})" class="btn-sm btn-dark">🖨️</button>
-          <img src="${makeQR(code)}" style="width:64px;height:64px;">
-        </div>
-      </div>`;
-    }).join('');
-    document.getElementById('print-area').innerHTML = tools.map(t => {
-      const code = t.inv_number || ('TOOL-' + t.id);
-      return `<div class="qr-sticker"><img src="${makeQR(code)}" style="width:110px;height:110px;"><div style="font-weight:bold;">${code}</div><div style="font-size:11px;">${t.name}</div></div>`;
-    }).join('');
   }
 }
 
@@ -104,6 +93,14 @@ function printOneQR(id) {
   document.getElementById('print-area').innerHTML = `<div class="qr-sticker"><img src="${makeQR(code)}" style="width:110px;height:110px;"><div style="font-weight:bold;">${code}</div><div style="font-size:11px;">${t.name}</div></div>`;
   setTimeout(() => window.print(), 250);
 }
+function printAllQR() {
+  document.getElementById('print-area').innerHTML = tools.map(t => {
+    const code = t.inv_number || ('TOOL-' + t.id);
+    return `<div class="qr-sticker"><img src="${makeQR(code)}" style="width:110px;height:110px;"><div style="font-weight:bold;">${code}</div><div style="font-size:11px;">${t.name}</div></div>`;
+  }).join('');
+  setTimeout(() => window.print(), 250);
+}
+
 function openToolCard(id) {
   const t = tools.find(x => x.id === id);
   if (!t) return;

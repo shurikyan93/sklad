@@ -1,220 +1,401 @@
-// === ВПИШИТЕ ВАШИ КЛЮЧИ SUPABASE СЮДА ===
 const SB_URL = 'https://hedvmvvagozcnfufvnnh.supabase.co';
 const SB_KEY = 'sb_publishable_ROfy0OkzwSF-mA9xZEt0UQ_dZ0agsaQ';
-// =========================================
 
-let user = null, tools = [], emps = [], objs = [], cons = [], wTypes = [], wLogs = [], salPays = [];
-let stages = [], stageItems = [], stagePays = [], overheads = [];
+let user = null, activeMod = null;
+let emps = [], objs = [], wTypes = [], stages = [], stageItems = [], stagePays = [];
+let wLogs = [], salPays = [], overheads = [];
+let tools = [], cons = [], tLogs = [];
 
 async function api(path, method = 'GET', body = null) {
-  const opt = { method, headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' } };
-  if (body) opt.body = JSON.stringify(body);
-  const res = await fetch(SB_URL + '/rest/v1/' + path, opt);
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  const opts = {
+    method,
+    headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, opts);
+  const txt = await res.text();
+  if (!res.ok) throw new Error(txt || res.status);
+  return txt ? JSON.parse(txt) : null;
 }
 
-async function uploadPhoto(id) {
-  const inp = document.getElementById(id);
-  if (!inp || !inp.files || !inp.files.length) return null;
-  const rawFile = inp.files.item(0);
-  const blob = await new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-      const scale = Math.min(1, 1200 / img.width);
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width * scale);
-      c.height = Math.round(img.height * scale);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      c.toBlob(b => resolve(b || rawFile), 'image/jpeg', 0.8);
-    };
-    img.onerror = () => resolve(rawFile);
-    img.src = URL.createObjectURL(rawFile);
-  });
-  const fn = Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.jpg';
-  const res = await fetch(`${SB_URL}/storage/v1/object/tool-photos/${fn}`, {
-    method: 'POST', headers: { 'apikey': SB_KEY, 'Content-Type': 'image/jpeg' }, body: blob
-  });
-  return res.ok ? `${SB_URL}/storage/v1/object/public/tool-photos/${fn}` : null;
+const roleName = r => r === 'admin' ? 'Руководитель' : r === 'foreman' ? 'Прораб' : 'Монтажник';
+
+function saveSession(u) {
+  user = u;
+  try { localStorage.setItem('portal_user_id', String(u.id)); } catch (e) {}
 }
 
-window.onload = async () => {
+function clearSession() {
+  user = null;
+  try { localStorage.removeItem('portal_user_id'); } catch (e) {}
+}
+
+async function login() {
+  const pin = document.getElementById('pin-input').value.trim();
+  const err = document.getElementById('login-err');
+  err.textContent = '';
+  if (!pin) return;
   try {
-    emps = await api('employees?select=*&order=name.asc');
-    document.getElementById('login-emp').innerHTML = emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-    const now = new Date();
-    const mStr = now.toISOString().slice(0, 7);
-    const dStr = now.toISOString().slice(0, 10);
-    document.getElementById('sal-month').value = mStr;
-    document.getElementById('dash-month').value = mStr;
-    document.getElementById('oh-date').value = dStr;
-    document.getElementById('rep-from').value = mStr + '-01';
-    document.getElementById('rep-to').value = dStr;
-  } catch (e) { document.getElementById('err-msg').textContent = 'Ошибка подключения: проверьте ключи'; }
-};
+    const rows = await api(`employees?pin=eq.${encodeURIComponent(pin)}`);
+    if (!rows || !rows.length) { err.textContent = 'Неверный ПИН-код'; return; }
+    saveSession(rows[0]);
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('pin-input').value = '';
+    await refresh();
+    openHub();
+  } catch (e) { err.textContent = 'Ошибка сети или базы'; }
+}
 
-function doLogin() {
-  const id = Number(document.getElementById('login-emp').value);
-  const pin = document.getElementById('login-pin').value.trim();
-  user = emps.find(e => e.id === id);
-  if (!user || user.pin !== pin) { document.getElementById('err-msg').textContent = 'Неверный ПИН-код'; return; }
-
-  const roleNames = { admin: 'Руководитель', foreman: 'Прораб', worker: 'Монтажник' };
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('top-bar').classList.remove('hidden');
-  document.getElementById('user-title').textContent = user.name;
-  document.getElementById('user-role-lbl').textContent = roleNames[user.role] || 'Сотрудник';
-
-  if (user.role === 'admin') {
-    document.getElementById('hub-settings-btn').classList.remove('hidden');
-    document.getElementById('n-admin').classList.remove('hidden');
-    document.getElementById('admin-add-cons').classList.remove('hidden');
-    document.getElementById('admin-dash-card').classList.remove('hidden');
-    document.getElementById('admin-pay-box').classList.remove('hidden');
-    document.getElementById('worker-sal-card').classList.add('hidden');
-    document.getElementById('np-overhead').classList.remove('hidden');
-    document.getElementById('np-reports').classList.remove('hidden');
-    document.getElementById('approve-box').classList.remove('hidden');
-  } else if (user.role === 'foreman') {
-    document.getElementById('approve-box').classList.remove('hidden');
-    document.getElementById('admin-add-cons').classList.remove('hidden');
-  }
-
-  refresh();
-  openHub();
+function logout() {
+  clearSession();
+  activeMod = null;
+  if (typeof stopCam === 'function') stopCam();
+  if (typeof stopReceiptCam === 'function') stopReceiptCam();
+  document.querySelectorAll('[id^="mod-"], nav, #hub-screen').forEach(el => el.classList.add('hidden'));
+  document.getElementById('login-screen').classList.remove('hidden');
 }
 
 async function refresh() {
-  [tools, objs, emps, cons, wTypes, wLogs, salPays, stages, stageItems, stagePays, overheads] = await Promise.all([
-    api('tools?select=*&order=inv_number.asc'),
-    api('objects?select=*&is_active=eq.true&order=name.asc'),
-    api('employees?select=*&order=name.asc'),
-    api('consumables?select=*&order=name.asc'),
-    api('work_types?select=*&order=name.asc'),
-    api('work_logs?select=*&order=created_at.desc'),
-    api('salary_payments?select=*&order=created_at.desc'),
-    api('object_stages?select=*&order=id.desc'),
-    api('stage_items?select=*&order=id.asc'),
-    api('stage_payments?select=*&order=created_at.desc'),
-    api('overhead_expenses?select=*&order=expense_date.desc')
+  const [e, o, wt, st, si, sp, wl, sal, oh, tl, cn, tlg] = await Promise.all([
+    api('employees?order=id.asc'),
+    api('objects?order=id.desc'),
+    api('work_types?order=id.asc'),
+    api('project_stages?order=id.asc'),
+    api('stage_items?order=id.asc'),
+    api('stage_payments?order=id.desc'),
+    api('work_logs?order=created_at.desc'),
+    api('salary_payments?order=created_at.desc'),
+    api('overhead_expenses?order=expense_date.desc,id.desc'),
+    api('tools?order=id.desc'),
+    api('consumables?order=id.asc'),
+    api('tool_logs?order=created_at.desc&limit=80')
   ]);
-  objs.sort((a, b) => a.id === 1 ? -1 : b.id === 1 ? 1 : a.name.localeCompare(b.name, 'ru'));
+  emps = e || []; objs = o || []; wTypes = wt || [];
+  stages = st || []; stageItems = si || []; stagePays = sp || [];
+  wLogs = wl || []; salPays = sal || []; overheads = oh || [];
+  tools = tl || []; cons = cn || []; tLogs = tlg || [];
   if (user) {
-    const fresh = emps.find(e => e.id === user.id);
-    if (fresh) user = fresh;
+    const fresh = emps.find(x => x.id === user.id);
+    if (fresh) saveSession(fresh);
   }
-  renderTools(); renderCons(); renderSettingsLists(); renderProjectsAll();
+  renderActiveView();
 }
+
 function openHub() {
+  activeMod = null;
   if (typeof stopCam === 'function') stopCam();
   if (typeof stopReceiptCam === 'function') stopReceiptCam();
-  ['hub-screen'].forEach(x => document.getElementById(x).classList.remove('hidden'));
-  ['mod-tools', 'mod-projects', 'mod-settings', 'nav-tools', 'nav-projects', 'btn-home'].forEach(x => document.getElementById(x).classList.add('hidden'));
-}
+  document.querySelectorAll('[id^="mod-"], nav').forEach(el => el.classList.add('hidden'));
+  document.getElementById('hub-screen').classList.remove('hidden');
+  document.getElementById('hub-user').textContent = user.name;
+  document.getElementById('hub-role').textContent = roleName(user.role);
 
-function openModule(m) {
-  document.getElementById('hub-screen').classList.add('hidden');
-  document.getElementById('btn-home').classList.remove('hidden');
-  if (m === 'tools') {
-    document.getElementById('mod-tools').classList.remove('hidden');
-    document.getElementById('nav-tools').classList.remove('hidden');
-    tab('tools');
-  } else if (m === 'projects') {
-    document.getElementById('mod-projects').classList.remove('hidden');
-    document.getElementById('nav-projects').classList.remove('hidden');
-    ptab('objs');
-  } else if (m === 'settings') {
-    document.getElementById('mod-settings').classList.remove('hidden');
-    renderSettingsLists();
+  const isAdmin = user.role === 'admin';
+  const isForeman = user.role === 'foreman';
+  const isWorker = user.role === 'worker';
+
+  document.getElementById('hub-overhead-btn').classList.toggle('hidden', !isAdmin);
+  document.getElementById('hub-reports-btn').classList.toggle('hidden', !isAdmin);
+  document.getElementById('hub-ref-btn').classList.toggle('hidden', !isAdmin);
+  document.getElementById('hub-proj-sub').textContent = isWorker
+    ? 'Фактически выполненные работы и материалы по этапам'
+    : 'Этапы работ, КП/Отчёт в PDF, чеки и оплаты';
+
+  const statsEl = document.getElementById('admin-hub-stats');
+  if (isAdmin) {
+    statsEl.classList.remove('hidden');
+    const inc = stagePays.reduce((s, p) => s + Number(p.amount || 0), 0);
+    const wPay = wLogs.filter(w => w.status === 'approved').reduce((s, w) => s + Number(w.total || 0), 0);
+    const mCost = stageItems.filter(i => i.estimate_type === 'fact' && i.item_kind === 'mat').reduce((s, i) => s + Number(i.qty || 0) * Number(i.cost_price || 0), 0);
+    const ohSum = overheads.reduce((s, o) => s + Number(o.amount || 0), 0);
+    const monthBase = emps.reduce((s, emp) => s + (emp.salary_type === 'day' ? 0 : Number(emp.base_salary || 0)), 0);
+    const profit = inc - wPay - mCost - ohSum - monthBase;
+    const activeObjs = objs.filter(x => x.id !== 1 && x.status !== 'done').length;
+    statsEl.innerHTML = `
+      <div class="stat-box"><small>Поступило от клиентов</small><strong style="color:#34d399;">${inc.toLocaleString('ru-RU')} ₽</strong></div>
+      <div class="stat-box"><small>Сдельная ЗП работникам</small><strong>${wPay.toLocaleString('ru-RU')} ₽</strong></div>
+      <div class="stat-box"><small>Закупка материалов</small><strong>${mCost.toLocaleString('ru-RU')} ₽</strong></div>
+      <div class="stat-box"><small>Накладные расходы</small><strong>${ohSum.toLocaleString('ru-RU')} ₽</strong></div>
+      <div class="stat-box"><small>Оклады (мес.) / Объектов</small><strong>${monthBase.toLocaleString('ru-RU')} ₽ · ${activeObjs}</strong></div>
+      <div class="stat-box"><small>Итоговый баланс</small><strong style="color:${profit >= 0 ? '#34d399' : '#fb7185'};">${profit.toLocaleString('ru-RU')} ₽</strong></div>
+    `;
+  } else if (isForeman) {
+    statsEl.classList.remove('hidden');
+    const pend = wLogs.filter(w => w.status === 'pending').length;
+    const activeObjs = objs.filter(x => x.id !== 1 && x.status !== 'done').length;
+    statsEl.innerHTML = `
+      <div class="stat-box"><small>Активных объектов</small><strong>${activeObjs}</strong></div>
+      <div class="stat-box"><small>Работ на проверке</small><strong style="color:#fbbf24;">${pend}</strong></div>
+    `;
+  } else {
+    statsEl.classList.add('hidden');
   }
 }
 
-// === ЕДИНЫЕ СПРАВОЧНИКИ (РУКОВОДИТЕЛЬ) ===
-function renderSettingsLists() {
-  const roleLbl = { admin: 'Руководитель', foreman: 'Прораб', worker: 'Монтажник' };
-  document.getElementById('admin-emps-list').innerHTML = emps.map(e => `
-    <div class="list-row">
-      <div><strong>${e.name}</strong> <span class="badge stock">${roleLbl[e.role] || e.role}</span><br><small style="color:#64748b;">ПИН: ${e.pin} | Оклад: ${Number(e.base_salary || 0).toLocaleString('ru-RU')} ₽</small></div>
+function makeHdr(title, sub) {
+  return `<div class="row" style="justify-content:space-between;">
+    <div><div style="font-size:17px;font-weight:bold;">${title}</div><div style="font-size:12px;color:#94a3b8;">${sub || user.name + ' · ' + roleName(user.role)}</div></div>
+    <button onclick="openHub()" class="btn-sm" style="background:#334155;">🏠 Меню</button>
+  </div>`;
+}
+
+function openModule(mod) {
+  activeMod = mod;
+  document.getElementById('hub-screen').classList.add('hidden');
+  document.querySelectorAll('[id^="mod-"], nav').forEach(el => el.classList.add('hidden'));
+  document.getElementById('mod-' + mod).classList.remove('hidden');
+  if (mod === 'tools') {
+    document.getElementById('t-hdr').innerHTML = makeHdr('🧰 Инструмент и расходники');
+    document.getElementById('nav-tools').classList.remove('hidden');
+    showToolTab('tools');
+  } else if (mod === 'projects') {
+    document.getElementById('p-hdr').innerHTML = makeHdr('🏗️ Объекты, этапы и смета');
+    if (typeof backToObjList === 'function') backToObjList();
+  } else if (mod === 'salary') {
+    document.getElementById('s-hdr').innerHTML = makeHdr('💰 Работы и зарплата');
+    if (typeof renderSalaryMod === 'function') renderSalaryMod();
+  } else if (mod === 'overhead') {
+    document.getElementById('o-hdr').innerHTML = makeHdr('🧾 Накладные расходы');
+    if (typeof renderOverheads === 'function') renderOverheads();
+  } else if (mod === 'reports') {
+    document.getElementById('r-hdr').innerHTML = makeHdr('📊 Отчёты');
+    if (typeof initReports === 'function') initReports();
+  } else if (mod === 'references') {
+    document.getElementById('ref-hdr').innerHTML = makeHdr('📚 Справочники');
+    renderRefs();
+  }
+}
+function renderActiveView() {
+  if (!user || !activeMod) return;
+  if (activeMod === 'tools' && typeof renderToolsMod === 'function') renderToolsMod();
+  if (activeMod === 'projects' && typeof renderProjectsMod === 'function') renderProjectsMod();
+  if (activeMod === 'salary' && typeof renderSalaryMod === 'function') renderSalaryMod();
+  if (activeMod === 'overhead' && typeof renderOverheads === 'function') renderOverheads();
+  if (activeMod === 'reports' && typeof renderReports === 'function') renderReports();
+  if (activeMod === 'references') renderRefs();
+}
+
+function openModal(html) {
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+  document.getElementById('modal-body').innerHTML = '';
+}
+
+function renderRefs() {
+  document.getElementById('ref-emp-list').innerHTML = emps.map(e => {
+    const stype = e.salary_type === 'day' ? '₽/день' : '₽/мес';
+    return `<div class="list-row">
+      <div><strong>${e.name}</strong> <span class="badge stock">${roleName(e.role)}</span><br><small style="color:#64748b;">ПИН: ${e.pin} · Оклад: ${Number(e.base_salary || 0).toLocaleString('ru-RU')} ${stype}</small></div>
       <div class="row">
-        <button onclick="setSalary(${e.id})" class="btn-dark btn-sm">₽ Оклад</button>
-        ${e.id !== user.id ? `<button onclick="delEmp(${e.id})" class="btn-red btn-sm">✕</button>` : ''}
+        <button onclick="editEmpModal(${e.id})" class="btn-sm">✏️</button>
+        <button onclick="delEmp(${e.id})" class="btn-sm btn-red">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('ref-obj-list').innerHTML = objs.filter(x => x.id !== 1).map(o => `
+    <div class="list-row">
+      <div><strong>${o.name}</strong></div>
+      <div class="row">
+        <button onclick="editObjModal(${o.id})" class="btn-sm">✏️</button>
+        <button onclick="delObj(${o.id})" class="btn-sm btn-red">✕</button>
       </div>
     </div>`).join('');
 
-  const activeObjs = objs.filter(o => o.id !== 1);
-  document.getElementById('objs-count').textContent = activeObjs.length;
-  const q = (document.getElementById('o-search')?.value || '').toLowerCase().trim();
-  const filteredObjs = objs.filter(o => o.name.toLowerCase().includes(q));
-  document.getElementById('admin-objs-list').innerHTML = filteredObjs.map(o => `
-    <div class="list-row">
-      <span>${o.name}</span>
-      ${o.id !== 1 ? `<div class="row"><button onclick="editObj(${o.id})" class="btn-dark btn-sm">✏️</button><button onclick="closeObj(${o.id})" class="btn-red btn-sm">Закрыть</button></div>` : '<span style="font-size:11px;color:#94a3b8;">База</span>'}
-    </div>`).join('');
+  renderRefPriceList();
+}
 
-  document.getElementById('settings-price-list').innerHTML = wTypes.map(w => `
+function renderRefPriceList() {
+  const q = (document.getElementById('ref-wt-search')?.value || '').trim().toLowerCase();
+  const list = wTypes.filter(w => !q || w.name.toLowerCase().includes(q) || (w.unit || '').toLowerCase().includes(q));
+  document.getElementById('ref-wt-list').innerHTML = list.map(w => `
     <div class="list-row">
-      <div><strong>${w.name}</strong> (${w.unit})<br><small style="color:#64748b;">ЗП: ${w.rate} ₽ | Заказчику: ${w.client_rate || 0} ₽</small></div>
-      <button onclick="delWorkType(${w.id})" class="btn-red btn-sm">✕</button>
-    </div>`).join('');
+      <div><strong>${w.name}</strong> <small style="color:#64748b;">(${w.unit || 'шт'})</small><br><small style="color:#059669;">ЗП: ${Number(w.rate || 0).toLocaleString('ru-RU')} ₽ · Клиент: ${Number(w.client_rate || 0).toLocaleString('ru-RU')} ₽</small></div>
+      <div class="row">
+        <button onclick="editWorkTypeModal(${w.id})" class="btn-sm">✏️</button>
+        <button onclick="delWorkType(${w.id})" class="btn-sm btn-red">✕</button>
+      </div>
+    </div>`).join('') || '<div style="font-size:12px;color:#94a3b8;padding:8px 0;">Ничего не найдено</div>';
 }
 
 async function addEmp() {
-  const name = document.getElementById('e-name').value.trim(), pin = document.getElementById('e-pin').value.trim(), role = document.getElementById('e-role').value;
-  if (!name || pin.length !== 4) return alert('Нужно ФИО и 4 цифры ПИНа');
-  await api('employees', 'POST', { name, pin, role, base_salary: 0 });
-  document.getElementById('e-name').value = ''; document.getElementById('e-pin').value = ''; refresh();
+  const name = document.getElementById('ref-emp-name').value.trim();
+  const pin = document.getElementById('ref-emp-pin').value.trim();
+  const role = document.getElementById('ref-emp-role').value;
+  const salary_type = document.getElementById('ref-emp-saltype').value;
+  const base_salary = Number(document.getElementById('ref-emp-sal').value) || 0;
+  if (!name || !pin) return alert('Укажите ФИО и ПИН-код');
+  await api('employees', 'POST', { name, pin, role, salary_type, base_salary });
+  document.getElementById('ref-emp-name').value = '';
+  document.getElementById('ref-emp-pin').value = '';
+  document.getElementById('ref-emp-sal').value = '';
+  await refresh();
 }
-async function setSalary(id) {
-  const e = emps.find(x => x.id === id);
-  const val = prompt(`Оклад в месяц для ${e.name} (₽):`, e.base_salary || 0);
-  if (val !== null) { await api('employees?id=eq.' + id, 'PATCH', { base_salary: Number(val) || 0 }); refresh(); }
-}
-async function delEmp(id) { if (confirm('Удалить сотрудника?')) { await api('employees?id=eq.' + id, 'DELETE'); refresh(); } }
 
-async function addObj() { const name = document.getElementById('o-name').value.trim(); if (name) { await api('objects', 'POST', { name }); document.getElementById('o-name').value = ''; refresh(); } }
-async function editObj(id) {
-  const o = objs.find(x => x.id === id);
-  const n = prompt('Новое название объекта:', o.name);
-  if (n && n.trim()) { await api('objects?id=eq.' + id, 'PATCH', { name: n.trim() }); refresh(); }
+function editEmpModal(id) {
+  const e = emps.find(x => x.id === id);
+  if (!e) return;
+  openModal(`
+    <h3>✏️ Редактировать сотрудника</h3>
+    <input id="ed-emp-name" value="${e.name}">
+    <input id="ed-emp-pin" value="${e.pin}">
+    <select id="ed-emp-role">
+      <option value="worker" ${e.role === 'worker' ? 'selected' : ''}>Монтажник</option>
+      <option value="foreman" ${e.role === 'foreman' ? 'selected' : ''}>Прораб</option>
+      <option value="admin" ${e.role === 'admin' ? 'selected' : ''}>Руководитель</option>
+    </select>
+    <select id="ed-emp-stype">
+      <option value="month" ${e.salary_type !== 'day' ? 'selected' : ''}>Оклад в месяц</option>
+      <option value="day" ${e.salary_type === 'day' ? 'selected' : ''}>Оклад в день (смена)</option>
+    </select>
+    <input id="ed-emp-sal" type="number" value="${Number(e.base_salary || 0)}">
+    <div class="row"><button onclick="saveEmp(${id})" class="btn-green">Сохранить</button><button onclick="closeModal()" class="btn-red">Отмена</button></div>
+  `);
 }
-async function closeObj(id) { if (confirm('Закрыть объект?')) { await api('objects?id=eq.' + id, 'PATCH', { is_active: false }); refresh(); } }
+
+async function saveEmp(id) {
+  await api('employees?id=eq.' + id, 'PATCH', {
+    name: document.getElementById('ed-emp-name').value.trim(),
+    pin: document.getElementById('ed-emp-pin').value.trim(),
+    role: document.getElementById('ed-emp-role').value,
+    salary_type: document.getElementById('ed-emp-stype').value,
+    base_salary: Number(document.getElementById('ed-emp-sal').value) || 0
+  });
+  closeModal();
+  await refresh();
+}
+
+async function delEmp(id) {
+  if (!confirm('Удалить сотрудника?')) return;
+  await api('employees?id=eq.' + id, 'DELETE');
+  await refresh();
+}
+
+async function addObj() {
+  const name = document.getElementById('ref-obj-name').value.trim();
+  if (!name) return;
+  await api('objects', 'POST', { name, status: 'work' });
+  document.getElementById('ref-obj-name').value = '';
+  await refresh();
+}
+
+function editObjModal(id) {
+  const o = objs.find(x => x.id === id);
+  if (!o) return;
+  openModal(`
+    <h3>✏️ Редактировать объект</h3>
+    <input id="ed-obj-name" value="${o.name}">
+    <div class="row"><button onclick="saveObj(${id})" class="btn-green">Сохранить</button><button onclick="closeModal()" class="btn-red">Отмена</button></div>
+  `);
+}
+
+async function saveObj(id) {
+  await api('objects?id=eq.' + id, 'PATCH', { name: document.getElementById('ed-obj-name').value.trim() });
+  closeModal();
+  await refresh();
+}
+
+async function delObj(id) {
+  if (!confirm('Удалить объект?')) return;
+  await api('objects?id=eq.' + id, 'DELETE');
+  await refresh();
+}
 
 async function addWorkType() {
-  const name = document.getElementById('p-name').value.trim();
-  const rate = Number(document.getElementById('p-rate').value) || 0;
-  const client_rate = Number(document.getElementById('p-client-rate').value) || 0;
-  const unit = document.getElementById('p-unit').value;
-  if (!name) return alert('Введите название работы');
-  await api('work_types', 'POST', { name, rate, client_rate, unit });
-  document.getElementById('p-name').value = ''; document.getElementById('p-rate').value = ''; document.getElementById('p-client-rate').value = ''; refresh();
+  const name = document.getElementById('ref-wt-name').value.trim();
+  const unit = document.getElementById('ref-wt-unit').value;
+  const rate = Number(document.getElementById('ref-wt-rate').value) || 0;
+  const client_rate = Number(document.getElementById('ref-wt-client').value) || 0;
+  if (!name) return alert('Укажите название работы');
+  await api('work_types', 'POST', { name, unit, rate, client_rate });
+  document.getElementById('ref-wt-name').value = '';
+  document.getElementById('ref-wt-rate').value = '';
+  document.getElementById('ref-wt-client').value = '';
+  await refresh();
 }
-async function delWorkType(id) { if (confirm('Удалить позицию из прайса?')) { await api('work_types?id=eq.' + id, 'DELETE'); refresh(); } }
+
+function editWorkTypeModal(id) {
+  const w = wTypes.find(x => x.id === id);
+  if (!w) return;
+  const units = ['шт', 'м', 'кв.м', 'комплекс', 'услуга', 'выезд', 'пролет'];
+  openModal(`
+    <h3>✏️ Редактировать позицию прайса</h3>
+    <input id="ed-wt-name" value="${w.name}">
+    <select id="ed-wt-unit">${units.map(u => `<option value="${u}" ${w.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select>
+    <div class="row">
+      <input id="ed-wt-rate" type="number" value="${Number(w.rate || 0)}" placeholder="ЗП работнику">
+      <input id="ed-wt-client" type="number" value="${Number(w.client_rate || 0)}" placeholder="Цена заказчику">
+    </div>
+    <div class="row"><button onclick="saveWorkType(${id})" class="btn-green">Сохранить</button><button onclick="closeModal()" class="btn-red">Отмена</button></div>
+  `);
+}
+
+async function saveWorkType(id) {
+  await api('work_types?id=eq.' + id, 'PATCH', {
+    name: document.getElementById('ed-wt-name').value.trim(),
+    unit: document.getElementById('ed-wt-unit').value,
+    rate: Number(document.getElementById('ed-wt-rate').value) || 0,
+    client_rate: Number(document.getElementById('ed-wt-client').value) || 0
+  });
+  closeModal();
+  await refresh();
+}
+
+async function delWorkType(id) {
+  if (!confirm('Удалить позицию из прайса?')) return;
+  await api('work_types?id=eq.' + id, 'DELETE');
+  await refresh();
+}
 
 function downloadPriceTemplate() {
-  if (typeof XLSX === 'undefined') return alert('Подождите загрузки библиотеки Excel');
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet([
-    { 'Наименование работы': 'Прокладка кабеля в гофре', 'Ед. изм.': 'м', 'ЗП работнику': 80, 'Цена заказчику': 130 },
-    { 'Наименование работы': 'Монтаж розетки / выключателя', 'Ед. изм.': 'шт', 'ЗП работнику': 250, 'Цена заказчику': 400 }
+  if (typeof XLSX === 'undefined') return alert('Excel библиотека не загружена');
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['Наименование', 'Ед. изм.', 'ЗП работнику', 'Цена заказчику'],
+    ['Монтаж щита', 'шт', 2500, 4500],
+    ['Прокладка кабеля', 'м', 80, 160]
   ]);
-  XLSX.utils.book_append_sheet(wb, ws, 'Прайс_работ');
-  XLSX.writeFile(wb, 'Шаблон_прайс_работ.xlsx');
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Прайс');
+  XLSX.writeFile(wb, 'Шаблон_прайс_листа.xlsx');
 }
 
-async function importPriceExcel(inp) {
-  const file = inp.files.item(0);
-  if (!file) return;
-  try {
-    const wb = XLSX.read(await file.arrayBuffer());
-    const sheet = wb.Sheets.item ? wb.Sheets.item(0) : wb.Sheets[wb.SheetNames.at(0)];
-    const rows = XLSX.utils.sheet_to_json(sheet);
-    const payload = rows.filter(r => r['Наименование работы'] && String(r['Наименование работы']).trim()).map(r => ({
-      name: String(r['Наименование работы']).trim(),
-      unit: r['Ед. изм.'] ? String(r['Ед. изм.']).trim() : 'шт',
-      rate: Number(r['ЗП работнику']) || 0,
-      client_rate: Number(r['Цена заказчику']) || 0
-    }));
-    if (payload.length) { await api('work_types', 'POST', payload); alert(`Загружено расценок: ${payload.length}`); refresh(); }
-    inp.value = '';
-  } catch (e) { alert('Ошибка чтения прайса: ' + e.message); inp.value = ''; }
+async function importPriceExcel(input) {
+  const file = input.files[0];
+  if (!file || typeof XLSX === 'undefined') return;
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf);
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }).slice(1);
+  for (const r of rows) {
+    if (!r || !r[0]) continue;
+    await api('work_types', 'POST', {
+      name: String(r[0]).trim(),
+      unit: String(r[1] || 'шт').trim(),
+      rate: Number(r[2]) || 0,
+      client_rate: Number(r[3]) || 0
+    });
+  }
+  input.value = '';
+  alert('Прайс-лист загружен!');
+  await refresh();
 }
+
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const savedId = localStorage.getItem('portal_user_id');
+    if (savedId) {
+      const rows = await api(`employees?id=eq.${encodeURIComponent(savedId)}`);
+      if (rows && rows.length) {
+        saveSession(rows);
+        document.getElementById('login-screen').classList.add('hidden');
+        await refresh();
+        openHub();
+      }
+    }
+  } catch (e) {
+    clearSession();
+  }
+});

@@ -162,26 +162,61 @@
       </div>
       <div id="c-list" class="card" style="padding:6px 12px;"></div>
     </div>
-        <div id="t-sec-scan" class="hidden">
-      <div class="card">
-        <h3>📷 Сканер QR-кода</h3>
-        <button id="btn-cam" onclick="startCam()">Включить камеру</button>
-        <video id="qr-video" class="hidden" style="width:100%;border-radius:10px;margin-bottom:8px;"></video>
-        <p id="scan-status" style="font-size:12px;color:#64748b;text-align:center;">или введите код вручную:</p>
-        <div class="row"><input id="manual-code" placeholder="TOOL-1"><button onclick="manualScan()" class="btn-sm" style="padding:10px 14px;">Найти</button></div>
+           <div id="t-sec-scan" class="hidden">
+      <div class="row" style="margin-bottom:10px;">
+        <button id="sc-mode-single" onclick="setScanMode('single')" class="btn-sm btn-amber" style="flex:1;">🔍 Одиночный поиск</button>
+        <button id="sc-mode-inv" onclick="setScanMode('inv')" class="btn-sm btn-dark" style="flex:1;opacity:0.7;">📋 Инвентаризация</button>
       </div>
-      <div class="card">
-        <h3>🖨️ Печать QR-наклеек</h3>
-        <button onclick="printAllQR()" class="btn-green">Распечатать все наклейки</button>
+
+      <div id="scan-single-box">
+        <div class="card">
+          <h3>📷 Сканер QR-кода</h3>
+          <button id="btn-cam" onclick="startCam()">Включить камеру</button>
+          <video id="qr-video" class="hidden" style="width:100%;border-radius:10px;margin-bottom:8px;"></video>
+          <p id="scan-status" style="font-size:12px;color:#64748b;text-align:center;">или введите код вручную:</p>
+          <div class="row"><input id="manual-code" placeholder="TOOL-1"><button onclick="manualScan()" class="btn-sm" style="padding:10px 14px;">Найти</button></div>
+        </div>
+        <div class="card">
+          <h3>🖨️ Печать QR-наклеек</h3>
+          <button onclick="printAllQR()" class="btn-green">Распечатать все наклейки</button>
+        </div>
       </div>
-      <div id="scan-result"></div>
+
+      <div id="scan-inv-box" class="hidden">
+        <div class="card">
+          <div class="row" style="justify-content:space-between;margin-bottom:8px;">
+            <h3>📋 Ревизия инструмента</h3>
+            <select id="inv-scope" onchange="changeInvScope()" style="width:auto;margin:0;padding:6px 8px;font-size:12px;">
+              <option value="stock">Только склад</option>
+              <option value="all">Весь инструмент</option>
+            </select>
+          </div>
+          <div class="row">
+            <button id="btn-inv-cam" onclick="toggleInvCam()" class="btn-green" style="flex:2;">📷 Сканировать подряд</button>
+            <button onclick="resetInv()" class="btn-red btn-sm" style="padding:10px;">🗑️ Сброс</button>
+          </div>
+          <video id="inv-video" class="hidden" style="width:100%;border-radius:10px;margin-top:6px;"></video>
+          <div id="inv-toast" style="font-size:13px;font-weight:bold;text-align:center;margin-top:6px;min-height:20px;"></div>
+          <div id="inv-guest-box" class="hidden" style="background:#fef3c7;padding:8px;border-radius:10px;margin-top:6px;font-size:12px;color:#92400e;"></div>
+        </div>
+
+        <div class="card" style="padding:10px;">
+          <div class="row" style="justify-content:space-between;margin-bottom:8px;">
+            <strong id="inv-counter" style="font-size:14px;">Учтено: 0 из 0</strong>
+            <div class="row">
+              <button onclick="exportInvExcel()" class="btn-sm btn-amber">📥 Excel</button>
+              <button onclick="finishInv()" class="btn-sm btn-green">✅ Завершить</button>
+            </div>
+          </div>
+          <div class="row" style="margin-bottom:6px;">
+            <button id="if-all" onclick="setInvFilter('all')" class="btn-sm" style="flex:1;">Все</button>
+            <button id="if-miss" onclick="setInvFilter('miss')" class="btn-sm btn-red" style="flex:1;">❌ Не найдено</button>
+            <button id="if-ok" onclick="setInvFilter('ok')" class="btn-sm btn-green" style="flex:1;">✅ В наличии</button>
+          </div>
+          <div id="inv-list" style="max-height:360px;overflow-y:auto;"></div>
+        </div>
+      </div>
     </div>
-    <div id="t-sec-logs" class="hidden"><div id="t-logs-list"></div></div>
-    <div id="t-sec-qr" class="hidden">
-      <div class="card"><h3>🖨️ Печать QR-наклеек</h3><button onclick="window.print()" class="btn-green">Распечатать все наклейки</button></div>
-      <div id="qr-batch"></div>
-    </div>
-  </div>
   <!-- МОДУЛЬ 2: ОБЪЕКТЫ, ЭТАПЫ И СМЕТА -->
   <div id="mod-projects" class="hidden">
     <div id="p-hdr" class="card" style="background:#1e293b;color:#fff;"></div>

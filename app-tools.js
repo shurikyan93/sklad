@@ -392,3 +392,255 @@ async function importConsExcel(input) {
   alert(`Загружено позиций: ${count}`);
   await refresh();
 }
+// === РЕЖИМ ИНВЕНТАРИЗАЦИИ ===
+let scanMode = 'single', invScope = 'stock', invFilter = 'all', invChecked = new Set();
+let invCamStream = null, invScanTimer = null, lastInvCode = '', lastInvTime = 0;
+
+function loadInvState() {
+  try {
+    const raw = localStorage.getItem('portal_inv_state');
+    if (raw) {
+      const data = JSON.parse(raw);
+      invScope = data.scope || 'stock';
+      invChecked = new Set(data.ids || []);
+      const scEl = document.getElementById('inv-scope');
+      if (scEl) scEl.value = invScope;
+    }
+  } catch (e) {}
+}
+
+function saveInvState() {
+  try {
+    localStorage.setItem('portal_inv_state', JSON.stringify({ scope: invScope, ids: Array.from(invChecked) }));
+  } catch (e) {}
+}
+
+function beepInv() {
+  try {
+    if (navigator.vibrate) navigator.vibrate(120);
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    osc.type = 'sine'; osc.frequency.value = 880;
+    osc.connect(ctx.destination); osc.start();
+    setTimeout(() => { osc.stop(); ctx.close(); }, 110);
+  } catch (e) {}
+}
+
+function setScanMode(m) {
+  scanMode = m;
+  stopCam();
+  stopInvCam();
+  document.getElementById('scan-single-box').classList.toggle('hidden', m !== 'single');
+  document.getElementById('scan-inv-box').classList.toggle('hidden', m !== 'inv');
+  document.getElementById('sc-mode-single').style.opacity = m === 'single' ? '1' : '0.6';
+  document.getElementById('sc-mode-inv').style.opacity = m === 'inv' ? '1' : '0.6';
+  if (m === 'inv') {
+    loadInvState();
+    renderInvList();
+  }
+}
+
+function changeInvScope() {
+  invScope = document.getElementById('inv-scope').value;
+  saveInvState();
+  renderInvList();
+}
+
+function setInvFilter(f) {
+  invFilter = f;
+  renderInvList();
+}
+
+function getInvTargetTools() {
+  return tools.filter(t => invScope === 'all' || (t.status || 'stock') === 'stock');
+}
+
+function toggleInvItem(id) {
+  if (invChecked.has(id)) invChecked.delete(id);
+  else invChecked.add(id);
+  saveInvState();
+  renderInvList();
+}
+
+function renderInvList() {
+  const target = getInvTargetTools();
+  const okCount = target.filter(t => invChecked.has(t.id)).length;
+  document.getElementById('inv-counter').textContent = `Учтено: ${okCount} из ${target.length}`;
+
+  ['all', 'miss', 'ok'].forEach(f => {
+    const b = document.getElementById('if-' + f);
+    if (b) b.style.opacity = invFilter === f ? '1' : '0.6';
+  });
+
+  const shown = target.filter(t => {
+    const isOk = invChecked.has(t.id);
+    if (invFilter === 'ok') return isOk;
+    if (invFilter === 'miss') return !isOk;
+    return true;
+  });
+
+  const stNames = { stock: 'Склад', work: 'В работе', repair: 'В ремонте' };
+  document.getElementById('inv-list').innerHTML = shown.map(t => {
+    const isOk = invChecked.has(t.id);
+    const code = t.inv_number || ('TOOL-' + t.id);
+    const h = emps.find(e => e.id === t.holder_id);
+    return `<div class="list-row" onclick="toggleInvItem(${t.id})" style="cursor:pointer;background:${isOk ? '#f0fdf4' : '#fff'};padding:8px 6px;border-radius:8px;margin-bottom:4px;">
+      <div style="padding-right:8px;">
+        <strong>${code}</strong> · ${t.name}<br>
+        <small style="color:#64748b;">${stNames[t.status || 'stock']}${h ? ' · 👷 ' + h.name : ''}</small>
+      </div>
+      <span style="font-size:18px;">${isOk ? '✅' : '⬜'}</span>
+    </div>`;
+  }).join('') || '<div style="text-align:center;color:#94a3b8;padding:12px;">Список пуст</div>';
+}
+function toggleInvCam() {
+  if (invCamStream) stopInvCam();
+  else startInvCam();
+}
+
+async function startInvCam() {
+  const vid = document.getElementById('inv-video');
+  const btn = document.getElementById('btn-inv-cam');
+  const toast = document.getElementById('inv-toast');
+  if (typeof jsQR === 'undefined') { toast.textContent = 'Библиотека jsQR не подключена'; return; }
+  try {
+    invCamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    vid.srcObject = invCamStream; vid.setAttribute('playsinline', true); vid.classList.remove('hidden');
+    await vid.play();
+    btn.textContent = '⏹️ Остановить камеру';
+    btn.className = 'btn-red';
+    toast.style.color = '#475569';
+    toast.textContent = 'Наводите камеру по очереди на QR-коды...';
+
+    const cvs = document.createElement('canvas'), ctx = canvasCtx = cvs.getContext('2d');
+    invScanTimer = setInterval(() => {
+      if (vid.readyState === vid.HAVE_ENOUGH_DATA) {
+        cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
+        ctx.drawImage(vid, 0, 0);
+        const code = jsQR(ctx.getImageData(0, 0, cvs.width, cvs.height).data, cvs.width, cvs.height);
+        if (code && code.data) {
+          const val = code.data.trim().toUpperCase();
+          const now = Date.now();
+          if (val === lastInvCode && now - lastInvTime < 1800) return;
+          lastInvCode = val; lastInvTime = now;
+          handleInvScan(val);
+        }
+      }
+    }, 250);
+  } catch (e) { toast.textContent = 'Нет доступа к камере'; }
+}
+
+function stopInvCam() {
+  if (invScanTimer) { clearInterval(invScanTimer); invScanTimer = null; }
+  if (invCamStream) { invCamStream.getTracks().forEach(t => t.stop()); invCamStream = null; }
+  const vid = document.getElementById('inv-video');
+  const btn = document.getElementById('btn-inv-cam');
+  if (vid) vid.classList.add('hidden');
+  if (btn) { btn.textContent = '📷 Сканировать подряд'; btn.className = 'btn-green'; }
+}
+
+function handleInvScan(val) {
+  const toast = document.getElementById('inv-toast');
+  const guestBox = document.getElementById('inv-guest-box');
+  guestBox.classList.add('hidden');
+
+  const found = tools.find(t => (t.inv_number || ('TOOL-' + t.id)).toUpperCase() === val);
+  if (!found) {
+    toast.style.color = '#e11d48';
+    toast.textContent = `❓ Неизвестный код: ${val}`;
+    return;
+  }
+
+  const code = found.inv_number || ('TOOL-' + found.id);
+  const status = found.status || 'stock';
+
+  if (invScope === 'stock' && status !== 'stock') {
+    beepInv();
+    const h = emps.find(e => e.id === found.holder_id);
+    toast.style.color = '#b45309';
+    toast.textContent = `⚠️ ${code} числится: ${status === 'work' ? 'В работе' : 'В ремонте'}`;
+    guestBox.classList.remove('hidden');
+    guestBox.innerHTML = `<div><strong>${code} — ${found.name}</strong> сейчас числится ${status === 'work' ? 'в работе' + (h ? ' у ' + h.name : '') : 'в ремонте'}.</div>
+      <button onclick="returnGuestToStock(${found.id})" class="btn-sm btn-green" style="margin-top:6px;width:100%;">✅ Вернуть на склад и учесть в ревизии</button>`;
+    return;
+  }
+
+  if (invChecked.has(found.id)) {
+    toast.style.color = '#2563eb';
+    toast.textContent = `ℹ️ Уже учтён: ${code} — ${found.name}`;
+    return;
+  }
+
+  invChecked.add(found.id);
+  saveInvState();
+  beepInv();
+  toast.style.color = '#059669';
+  toast.textContent = `✅ Учтено: ${code} — ${found.name}`;
+  renderInvList();
+}
+
+async function returnGuestToStock(id) {
+  await api('tools?id=eq.' + id, 'PATCH', { status: 'stock', holder_id: null, object_id: 1 });
+  await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Вернул на склад (при инвентаризации)', object_id: 1, created_at: new Date().toISOString() });
+  invChecked.add(id);
+  saveInvState();
+  document.getElementById('inv-guest-box').classList.add('hidden');
+  document.getElementById('inv-toast').textContent = '✅ Возвращено на склад и учтено!';
+  await refresh();
+  renderInvList();
+}
+
+function resetInv() {
+  if (!confirm('Сбросить все отметки текущей инвентаризации?')) return;
+  invChecked.clear();
+  saveInvState();
+  document.getElementById('inv-toast').textContent = '';
+  document.getElementById('inv-guest-box').classList.add('hidden');
+  renderInvList();
+}
+
+function exportInvExcel() {
+  if (typeof XLSX === 'undefined') return alert('Excel библиотека не загружена');
+  const target = getInvTargetTools();
+  const stNames = { stock: 'На складе', work: 'В работе', repair: 'В ремонте' };
+  const rows = [['Инв. номер', 'Наименование', 'Статус по базе', 'Ответственный', 'Результат ревизии']];
+  target.forEach(t => {
+    const h = emps.find(e => e.id === t.holder_id);
+    rows.push([
+      t.inv_number || ('TOOL-' + t.id),
+      t.name,
+      stNames[t.status || 'stock'],
+      h ? h.name : '—',
+      invChecked.has(t.id) ? 'В наличии' : 'НЕ НАЙДЕНО'
+    ]);
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Инвентаризация');
+  XLSX.writeFile(wb, `Акт_инвентаризации_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+async function finishInv() {
+  stopInvCam();
+  const target = getInvTargetTools();
+  const okCount = target.filter(t => invChecked.has(t.id)).length;
+  const missing = target.filter(t => !invChecked.has(t.id));
+  const scopeLbl = invScope === 'stock' ? 'Склад' : 'Весь инструмент';
+  const missText = missing.length
+    ? 'Не найдено: ' + missing.map(t => `${t.inv_number || 'TOOL-' + t.id} (${t.name})`).join(', ')
+    : 'Недостачи нет';
+
+  if (!confirm(`Завершить ревизию (${scopeLbl})?\nНайдено: ${okCount} из ${target.length}.\n${missText}\n\nИтог будет записан в Журнал.`)) return;
+
+  await api('logs', 'POST', {
+    employee_id: user.id,
+    action: `Инвентаризация (${scopeLbl}): учтено ${okCount} из ${target.length}`,
+    object_id: 1,
+    comment: missText.slice(0, 250),
+    created_at: new Date().toISOString()
+  });
+
+  invChecked.clear();
+  saveInvState();
+  await refresh();
+  showToolTab('logs');
+}

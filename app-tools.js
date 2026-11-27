@@ -1,5 +1,29 @@
 let curToolTab = 'tools', camStream = null, scanTimer = null;
 
+async function uploadToolPhoto(inpId) {
+  const inp = document.getElementById(inpId);
+  if (!inp || !inp.files || !inp.files.length) return null;
+  const rawFile = inp.files.item(0);
+  const blob = await new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1200 / img.width);
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => resolve(b || rawFile), 'image/jpeg', 0.8);
+    };
+    img.onerror = () => resolve(rawFile);
+    img.src = URL.createObjectURL(rawFile);
+  });
+  const fn = Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.jpg';
+  const res = await fetch(`${SB_URL}/storage/v1/object/tool-photos/${fn}`, {
+    method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'image/jpeg' }, body: blob
+  });
+  return res.ok ? `${SB_URL}/storage/v1/object/public/tool-photos/${fn}` : null;
+}
+
 function showToolTab(t) {
   curToolTab = t;
   stopCam();
@@ -55,7 +79,10 @@ function renderToolsMod() {
       const code = t.inv_number || ('TOOL-' + t.id);
       return `<div class="card row" style="justify-content:space-between;">
         <div><strong>${code}</strong><br><small>${t.name}</small></div>
-        <img src="${makeQR(code)}" style="width:72px;height:72px;">
+        <div class="row">
+          <button onclick="printOneQR(${t.id})" class="btn-sm btn-dark">🖨️</button>
+          <img src="${makeQR(code)}" style="width:64px;height:64px;">
+        </div>
       </div>`;
     }).join('');
     document.getElementById('print-area').innerHTML = tools.map(t => {
@@ -69,6 +96,14 @@ function makeQR(txt) {
   if (window.qrcode) { const qr = qrcode(0, 'M'); qr.addData(txt); qr.make(); return qr.createDataURL(6, 4); }
   return '';
 }
+
+function printOneQR(id) {
+  const t = tools.find(x => x.id === id);
+  if (!t) return;
+  const code = t.inv_number || ('TOOL-' + t.id);
+  document.getElementById('print-area').innerHTML = `<div class="qr-sticker"><img src="${makeQR(code)}" style="width:110px;height:110px;"><div style="font-weight:bold;">${code}</div><div style="font-size:11px;">${t.name}</div></div>`;
+  setTimeout(() => window.print(), 250);
+}
 function openToolCard(id) {
   const t = tools.find(x => x.id === id);
   if (!t) return;
@@ -76,6 +111,8 @@ function openToolCard(id) {
   const code = t.inv_number || ('TOOL-' + t.id);
   const objOpt = objs.filter(x => x.id !== 1).map(x => `<option value="${x.id}">${x.name}</option>`).join('') || '<option value="1">На объект</option>';
   const empOpt = emps.filter(x => x.id !== user.id).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+  const dtText = t.purchase_date ? new Date(t.purchase_date).toLocaleDateString('ru-RU') : '—';
+  const prText = t.price ? Number(t.price).toLocaleString('ru-RU') + ' ₽' : '—';
 
   let actions = '';
   if (!t.status || t.status === 'stock') {
@@ -83,7 +120,7 @@ function openToolCard(id) {
   } else if (t.status === 'work') {
     actions = `<button onclick="toolReturn(${id})" class="btn-green">✅ Вернуть на склад</button>
       <select id="tr-emp">${empOpt}</select><select id="tr-obj">${objOpt}</select>
-      <button onclick="toolTransfer(${id})" class="btn-amber">🤝 Передать коллеге</button>
+      <button onclick="toolTransfer(${id})" class="btn-amber">🤝 Передать коллеге / объект</button>
       <input id="rp-comm" placeholder="Опишите поломку..."><button onclick="toolRepair(${id})" class="btn-red">🛠️ В ремонт</button>`;
   } else if (user.role === 'admin' || user.role === 'foreman') {
     actions = `<button onclick="toolReturn(${id})" class="btn-green">✅ Вернуть из ремонта</button>`;
@@ -93,11 +130,50 @@ function openToolCard(id) {
     <div class="row" style="justify-content:space-between;margin-bottom:6px;"><strong style="color:#2563eb;">${code}</strong><button onclick="closeModal()" class="btn-sm" style="background:#e2e8f0;color:#000;">✕</button></div>
     <h3 style="margin-bottom:6px;">${t.name}</h3>
     ${t.photo_url ? `<img src="${t.photo_url}" class="thumb">` : ''}
-    <p style="font-size:13px;color:#475569;margin-bottom:10px;">Место: <strong>${o ? o.name : 'Склад'}</strong> · У кого: <strong>${h ? h.name : 'Никого'}</strong>${t.serial_number ? '<br>S/N: ' + t.serial_number : ''}</p>
+    <p style="font-size:13px;color:#475569;margin-bottom:10px;">
+      Место: <strong>${o ? o.name : 'Склад'}</strong> · У кого: <strong>${h ? h.name : 'Никого'}</strong><br>
+      Поступил: <strong>${dtText}</strong> · Стоимость: <strong>${prText}</strong>${t.serial_number ? '<br>S/N: ' + t.serial_number : ''}
+    </p>
     ${actions}
-    ${user.role === 'admin' ? `<button onclick="delTool(${id})" class="btn-red btn-sm" style="margin-top:8px;">🗑️ Удалить инструмент</button>` : ''}
-    <div style="text-align:center;margin-top:10px;"><img src="${makeQR(code)}" style="width:100px;height:100px;"></div>
+    ${user.role === 'admin' ? `<div class="row" style="margin-top:10px;border-top:1px solid #e2e8f0;padding-top:10px;">
+      <button onclick="editToolModal(${id})" class="btn-dark btn-sm" style="flex:1;">✏️ Редактировать</button>
+      <button onclick="delTool(${id})" class="btn-red btn-sm" style="flex:1;">🗑️ Удалить</button>
+    </div>` : ''}
+    <div style="text-align:center;margin-top:12px;">
+      <img src="${makeQR(code)}" style="width:110px;height:110px;border:1px solid #cbd5e1;padding:4px;border-radius:8px;">
+      <div style="margin-top:6px;"><button onclick="printOneQR(${id})" class="btn-dark btn-sm">🖨️ Печать QR</button></div>
+    </div>
   `);
+}
+
+function editToolModal(id) {
+  const t = tools.find(x => x.id === id);
+  if (!t) return;
+  openModal(`
+    <h3>✏️ Редактировать инструмент</h3>
+    <input id="ed-t-name" value="${t.name}" placeholder="Наименование">
+    <input id="ed-t-sn" value="${t.serial_number || ''}" placeholder="Серийный номер">
+    <div class="row"><input id="ed-t-date" type="date" value="${t.purchase_date || ''}"><input id="ed-t-price" type="number" value="${t.price || ''}" placeholder="Стоимость, ₽"></div>
+    <label style="font-size:12px;color:#64748b;">Новое фото (если нужно заменить):</label>
+    <input id="ed-t-photo" type="file" accept="image/*">
+    <div class="row"><button id="btn-save-tool" onclick="saveTool(${id})" class="btn-green">Сохранить</button><button onclick="openToolCard(${id})" class="btn-red">Отмена</button></div>
+  `);
+}
+
+async function saveTool(id) {
+  const btn = document.getElementById('btn-save-tool');
+  if (btn) btn.textContent = 'Сохранение...';
+  const upd = {
+    name: document.getElementById('ed-t-name').value.trim(),
+    serial_number: document.getElementById('ed-t-sn').value.trim(),
+    purchase_date: document.getElementById('ed-t-date').value || null,
+    price: document.getElementById('ed-t-price').value ? Number(document.getElementById('ed-t-price').value) : null
+  };
+  const newPhoto = await uploadToolPhoto('ed-t-photo');
+  if (newPhoto) upd.photo_url = newPhoto;
+  await api('tools?id=eq.' + id, 'PATCH', upd);
+  await refresh();
+  openToolCard(id);
 }
 
 async function toolTake(id) {
@@ -112,7 +188,6 @@ async function toolReturn(id) {
   await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Вернул на склад', object_id: 1 });
   closeModal(); await refresh();
 }
-
 async function toolTransfer(id) {
   const eid = Number(document.getElementById('tr-emp').value), oid = Number(document.getElementById('tr-obj').value) || 1;
   const next = emps.find(e => e.id === eid);
@@ -138,10 +213,18 @@ async function delTool(id) {
 async function addTool() {
   const name = document.getElementById('t-name').value.trim();
   const serial_number = document.getElementById('t-sn').value.trim();
+  const purchase_date = document.getElementById('t-date')?.value || null;
   const price = Number(document.getElementById('t-cost').value) || null;
   if (!name) return alert('Введите название инструмента');
-  await api('tools', 'POST', { name, serial_number, price, status: 'stock', object_id: 1 });
-  document.getElementById('t-name').value = ''; document.getElementById('t-sn').value = ''; document.getElementById('t-cost').value = '';
+  const btn = document.getElementById('btn-add-tool');
+  if (btn) btn.textContent = 'Сохранение...';
+  const photo_url = await uploadToolPhoto('t-photo');
+  await api('tools', 'POST', { name, serial_number, purchase_date, price, photo_url, status: 'stock', object_id: 1 });
+  document.getElementById('t-name').value = ''; document.getElementById('t-sn').value = '';
+  if (document.getElementById('t-date')) document.getElementById('t-date').value = '';
+  document.getElementById('t-cost').value = '';
+  if (document.getElementById('t-photo')) document.getElementById('t-photo').value = '';
+  if (btn) btn.textContent = 'Сохранить и создать QR';
   await refresh();
 }
 
@@ -155,16 +238,40 @@ function openConsCard(id) {
     <p style="font-size:13px;color:#64748b;margin-bottom:10px;">Остаток на складе: <strong>${c.qty} ${c.unit || 'шт'}</strong></p>
     <input id="cs-qty" type="number" step="any" value="1">
     <select id="cs-obj">${objOpt}</select>
-    <button onclick="consTake(${id})" class="btn-green">Списать на объект</button>
-    ${isStaff ? `<div class="row" style="margin-top:8px;"><button onclick="consAddQty(${id})" class="btn-amber" style="flex:1;">+ Пополнить</button><button onclick="consDel(${id})" class="btn-red btn-sm">🗑️</button></div>` : ''}
+    <button onclick="consTake(${id})" class="btn-green">Переместить / списать на объект</button>
+    ${isStaff ? `<div class="row" style="margin-top:8px;">
+      <button onclick="consAddQty(${id})" class="btn-amber" style="flex:1;">+ Пополнить</button>
+      <button onclick="editConsModal(${id})" class="btn-dark btn-sm">✏️</button>
+      <button onclick="consDel(${id})" class="btn-red btn-sm">🗑️</button>
+    </div>` : ''}
   `);
+}
+
+function editConsModal(id) {
+  const c = cons.find(x => x.id === id);
+  if (!c) return;
+  openModal(`
+    <h3>✏️ Редактировать материал</h3>
+    <input id="ed-c-name" value="${c.name}">
+    <div class="row"><input id="ed-c-qty" type="number" step="any" value="${c.qty}"><input id="ed-c-unit" value="${c.unit || 'шт'}"></div>
+    <div class="row"><button onclick="saveCons(${id})" class="btn-green">Сохранить</button><button onclick="openConsCard(${id})" class="btn-red">Отмена</button></div>
+  `);
+}
+
+async function saveCons(id) {
+  await api('consumables?id=eq.' + id, 'PATCH', {
+    name: document.getElementById('ed-c-name').value.trim(),
+    qty: Number(document.getElementById('ed-c-qty').value) || 0,
+    unit: document.getElementById('ed-c-unit').value.trim() || 'шт'
+  });
+  closeModal(); await refresh();
 }
 
 async function consTake(id) {
   const c = cons.find(x => x.id === id), val = Number(document.getElementById('cs-qty').value), oid = Number(document.getElementById('cs-obj').value) || 1;
   if (val <= 0 || val > Number(c.qty)) return alert('Недостаточно на складе!');
   await api('consumables?id=eq.' + id, 'PATCH', { qty: Number(c.qty) - val });
-  await api('logs', 'POST', { employee_id: user.id, action: `Списал со склада: ${c.name}`, object_id: oid, comment: `${val} ${c.unit || 'шт'}` });
+  await api('logs', 'POST', { employee_id: user.id, action: `Переместил со склада на объект: ${c.name}`, object_id: oid, comment: `${val} ${c.unit || 'шт'}` });
   closeModal(); await refresh();
 }
 

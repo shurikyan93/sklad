@@ -352,3 +352,48 @@ async function tab(t) {
     }).join('');
   }
 }
+// === СВЯЗКА С НОВЫМ ИНТЕРФЕЙСОМ ===
+let curToolTab = 'tools';
+
+function showToolTab(t) {
+  curToolTab = t;
+  if (typeof stopCam === 'function') stopCam();
+  ['tools', 'cons', 'scan', 'logs', 'qr'].forEach(x => {
+    const sec = document.getElementById('t-sec-' + x);
+    const btn = document.getElementById('nt-' + x);
+    if (sec) sec.classList.toggle('hidden', x !== t);
+    if (btn) btn.classList.toggle('active', x === t);
+  });
+  renderToolsMod();
+}
+
+function renderToolsMod() {
+  const isAdmin = user && (user.role === 'admin' || user.role === 'foreman');
+  const addToolBox = document.getElementById('t-admin-add');
+  const addConsBox = document.getElementById('c-admin-add');
+  if (addToolBox) addToolBox.classList.toggle('hidden', user.role !== 'admin');
+  if (addConsBox) addConsBox.classList.toggle('hidden', !isAdmin);
+
+  if (curToolTab === 'tools') {
+    const st = { stock: 'На складе', work: 'В работе', repair: 'В ремонте' };
+    document.getElementById('t-list').innerHTML = tools.map(t => {
+      const h = emps.find(e => e.id === t.holder_id), o = objs.find(x => x.id === t.object_id);
+      return `<div class="card" onclick="openTool(${t.id})" style="cursor:pointer;">
+        <div class="row" style="justify-content:space-between;"><strong>${t.inv_number || 'TOOL-' + t.id} — ${t.name}</strong><span class="badge ${t.status || 'stock'}">${st[t.status] || 'На складе'}</span></div>
+        <div style="font-size:12px; color:#64748b; margin-top:6px;">📍 ${o ? o.name : 'Склад'} ${h ? '| 👷 ' + h.name : ''}</div>
+      </div>`;
+    }).join('') || '<div class="card" style="text-align:center;color:#94a3b8;">Инструментов пока нет</div>';
+  } else if (curToolTab === 'cons') {
+    document.getElementById('c-list').innerHTML = cons.map(c => `
+      <div class="card row" style="justify-content:space-between; cursor:pointer;" onclick="openCons(${c.id})">
+        <strong>${c.name}</strong><span class="badge ${c.qty > 0 ? 'stock' : 'repair'}">${c.qty} ${c.unit}</span>
+      </div>`).join('') || '<div class="card" style="text-align:center;color:#94a3b8;">Склад расходников пуст</div>';
+  } else if (curToolTab === 'logs') {
+    document.getElementById('t-logs-list').innerHTML = (tLogs || []).map(l => {
+      const tl = tools.find(x => x.id === l.tool_id), em = emps.find(x => x.id === l.employee_id), ob = objs.find(x => x.id === l.object_id);
+      return `<div class="card" style="font-size:13px;"><strong>${tl ? (tl.inv_number || '') + ' ' + tl.name : l.action}</strong><br>${em ? em.name : ''}: ${tl ? l.action : ''} (${ob ? ob.name : ''}) ${l.comment ? '— ' + l.comment : ''}</div>`;
+    }).join('') || '<div class="card" style="text-align:center;color:#94a3b8;">Журнал пуст</div>';
+  } else if (curToolTab === 'qr') {
+    document.getElementById('qr-batch').innerHTML = tools.map(t => `<div class="card row" style="justify-content:space-between;"><div><strong>${t.inv_number || 'TOOL-' + t.id}</strong><br><small>${t.name}</small></div><img src="${makeQR(t.inv_number || 'TOOL-' + t.id)}" style="width:72px;height:72px;"></div>`).join('');
+  }
+}

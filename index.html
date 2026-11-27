@@ -118,25 +118,45 @@
   <!-- МОДУЛЬ 1: ИНСТРУМЕНТ И РАСХОДНИКИ -->
   <div id="mod-tools" class="hidden">
     <div id="t-hdr" class="card" style="background:#1e293b;color:#fff;"></div>
-    <div id="t-sec-tools" class="hidden">
-            <div id="t-admin-add" class="card hidden">
-        <h3>➕ Добавить инструмент</h3>
-        <input id="t-name" placeholder="Название (напр. Перфоратор Bosch)">
-        <input id="t-sn" placeholder="Серийный номер">
-        <div class="row"><input id="t-date" type="date" title="Дата поступления"><input id="t-cost" type="number" placeholder="Стоимость, ₽"></div>
-        <label style="font-size:12px;color:#64748b;">Фото инструмента:</label><input type="file" id="t-photo" accept="image/*">
-        <button id="btn-add-tool" onclick="addTool()" class="btn-green">Сохранить и создать QR</button>
+        <div id="t-sec-tools" class="hidden">
+      <div id="t-admin-add" class="card hidden">
+        <details>
+          <summary style="font-weight:bold;cursor:pointer;">➕ Добавить инструмент</summary>
+          <div style="margin-top:10px;">
+            <input id="t-name" placeholder="Название (напр. Перфоратор Bosch)">
+            <input id="t-sn" placeholder="Серийный номер">
+            <div class="row"><input id="t-date" type="date" title="Дата поступления"><input id="t-cost" type="number" placeholder="Стоимость, ₽"></div>
+            <label style="font-size:12px;color:#64748b;">Фото инструмента:</label><input type="file" id="t-photo" accept="image/*">
+            <button id="btn-add-tool" onclick="addTool()" class="btn-green">Сохранить и создать QR</button>
+          </div>
+        </details>
       </div>
-      <div id="t-list"></div>
+      <div class="card" style="padding:10px;">
+        <input id="t-search" placeholder="🔍 Поиск по названию, номеру или сотруднику..." oninput="renderToolsMod()" style="margin-bottom:8px;">
+        <div class="row">
+          <button id="tf-all" onclick="setToolFilter('all')" class="btn-sm" style="flex:1;">Все</button>
+          <button id="tf-stock" onclick="setToolFilter('stock')" class="btn-sm btn-green" style="flex:1;">На складе</button>
+          <button id="tf-work" onclick="setToolFilter('work')" class="btn-sm btn-amber" style="flex:1;">В работе</button>
+          <button id="tf-repair" onclick="setToolFilter('repair')" class="btn-sm btn-red" style="flex:1;">В ремонте</button>
+        </div>
+      </div>
+      <div id="t-list" class="card" style="padding:6px 12px;"></div>
     </div>
     <div id="t-sec-cons" class="hidden">
       <div id="c-admin-add" class="card hidden">
-        <h3>📦 Поступление / новый расходник</h3>
-        <input id="c-name" placeholder="Название (напр. Кабель ВВГнг 3x2.5)">
-        <div class="row"><input id="c-qty" type="number" step="any" placeholder="Кол-во"><input id="c-unit" placeholder="Ед. (м, шт, бухта)"></div>
-        <button onclick="addCons()" class="btn-green">Добавить на склад</button>
+        <details>
+          <summary style="font-weight:bold;cursor:pointer;">📦 Поступление / новый расходник</summary>
+          <div style="margin-top:10px;">
+            <input id="c-name" placeholder="Название (напр. Кабель ВВГнг 3x2.5)">
+            <div class="row"><input id="c-qty" type="number" step="any" placeholder="Кол-во"><input id="c-unit" placeholder="Ед. (м, шт, бухта)"></div>
+            <button onclick="addCons()" class="btn-green">Добавить на склад</button>
+          </div>
+        </details>
       </div>
-      <div id="c-list"></div>
+      <div class="card" style="padding:10px;">
+        <input id="c-search" placeholder="🔍 Поиск материала на складе..." oninput="renderToolsMod()" style="margin:0;">
+      </div>
+      <div id="c-list" class="card" style="padding:6px 12px;"></div>
     </div>
         <div id="t-sec-scan" class="hidden">
       <div class="card">

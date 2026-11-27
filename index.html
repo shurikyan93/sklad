@@ -39,6 +39,8 @@
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 12px; z-index: 25; }
     .thumb { width: 100%; max-height: 170px; object-fit: contain; background: #f8fafc; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0; cursor: zoom-in; }
     .list-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .bar-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 6px; overflow: hidden; margin-top: 4px; }
+    .bar-fill { height: 100%; border-radius: 6px; }
     @media print {
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
@@ -52,449 +54,297 @@
   <script src="html2pdf.js"></script>
 </head>
 <body>
-<div class="box">
+<div id="app" class="box">
+
   <!-- ЭКРАН ВХОДА -->
-  <div id="login-screen" class="card">
-    <h2 style="text-align:center; margin-bottom:14px;">⚡ Портал бригады</h2>
-    <select id="login-emp"><option>Загрузка...</option></select>
-    <input id="login-pin" type="password" inputmode="numeric" maxlength="4" placeholder="ПИН-код" onkeydown="if(event.key==='Enter') doLogin()" style="text-align:center; font-size:22px; letter-spacing:6px;">
-    <button onclick="doLogin()">Войти</button>
-    <p id="err-msg" style="color:#e11d48; font-size:13px; text-align:center;"></p>
+  <div id="login-screen" class="card" style="margin-top:40px;">
+    <h2 style="text-align:center;margin-bottom:6px;">⚡ Портал бригады</h2>
+    <p style="text-align:center;color:#64748b;font-size:13px;margin-bottom:16px;">Введите ПИН-код сотрудника</p>
+    <input type="password" id="pin-input" inputmode="numeric" maxlength="10" placeholder="••••" style="text-align:center;font-size:20px;letter-spacing:4px;">
+    <button onclick="login()">Войти</button>
+    <p id="login-err" style="color:#e11d48;text-align:center;font-size:13px;"></p>
   </div>
 
-  <!-- ОБЩАЯ ВЕРХНЯЯ ШАПКА -->
-  <div id="top-bar" class="card row hidden" style="justify-content:space-between;">
-    <div class="row">
-      <button id="btn-home" onclick="openHub()" class="btn-dark btn-sm hidden">🏠 Меню</button>
-      <div><strong id="user-title"></strong><br><small id="user-role-lbl" style="color:#64748b; font-size:11px;"></small></div>
-    </div>
-    <button onclick="location.reload()" class="btn-sm" style="background:#e2e8f0; color:#334155;">Выйти</button>
-  </div>
-
-  <!-- ГЛАВНОЕ МЕНЮ (ТРИ ПЛИТКИ) -->
+  <!-- ГЛАВНОЕ МЕНЮ (ХАБ) -->
   <div id="hub-screen" class="hidden">
-    <button onclick="openModule('tools')" class="hub-btn" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);">
-      <span>🔧</span><strong>Учёт инструмента и склада</strong><small>Инструмент, QR-коды, инвентаризация остатков</small>
+    <div class="card" style="background:#1e293b;color:#fff;">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div id="hub-user" style="font-size:18px;font-weight:bold;"></div>
+          <div id="hub-role" style="font-size:12px;color:#94a3b8;margin-top:2px;"></div>
+        </div>
+        <button onclick="logout()" class="btn-sm" style="background:#334155;">Выйти</button>
+      </div>
+      <div id="admin-hub-stats" class="stat-grid hidden"></div>
+    </div>
+
+    <button onclick="openModule('tools')" class="hub-btn btn-green">
+      <span>🧰</span>
+      <strong>Инструмент и расходники</strong>
+      <small>Приёмка, выдача, списание, QR-коды и склад</small>
     </button>
-    <button onclick="openModule('projects')" class="hub-btn" style="background:linear-gradient(135deg,#059669,#047857);">
-      <span>💰</span><strong>Объекты, сметы и ЗП</strong><small>Этапы, КП, чеки, зарплата и финансы</small>
+
+    <button onclick="openModule('projects')" class="hub-btn" style="background:#2563eb;color:#fff;">
+      <span>🏗️</span>
+      <strong>Объекты, этапы и смета</strong>
+      <small id="hub-proj-sub">Этапы работ, КП/Отчёт в PDF, чеки и оплаты</small>
     </button>
-    <button id="hub-settings-btn" onclick="openModule('settings')" class="hub-btn hidden" style="background:linear-gradient(135deg,#334155,#0f172a);">
-      <span>⚙️</span><strong>Справочники и настройки</strong><small>Сотрудники, оклады, объекты, прайс работ</small>
+
+    <button id="hub-salary-btn" onclick="openModule('salary')" class="hub-btn btn-amber">
+      <span>💰</span>
+      <strong>Работы и зарплата</strong>
+      <small>Сдельная выработка, смены, проверка и выплаты</small>
+    </button>
+
+    <button id="hub-overhead-btn" onclick="openModule('overhead')" class="hub-btn btn-purple hidden">
+      <span>🧾</span>
+      <strong>Накладные расходы</strong>
+      <small>Бензин, гараж, авто, спецодежда и гистограмма</small>
+    </button>
+
+    <button id="hub-reports-btn" onclick="openModule('reports')" class="hub-btn btn-dark hidden">
+      <span>📊</span>
+      <strong>Отчёты</strong>
+      <small>Сводная прибыль, доходы и расходы</small>
+    </button>
+
+    <button id="hub-ref-btn" onclick="openModule('references')" class="hub-btn hidden" style="background:#0f766e;color:#fff;">
+      <span>📚</span>
+      <strong>Справочники</strong>
+      <small>Сотрудники и оклады, объекты, прайс-лист на работы</small>
     </button>
   </div>
 
-  <!-- МОДУЛЬ 1: УЧЁТ ИНСТРУМЕНТА И СКЛАДА -->
+  <!-- МОДУЛЬ 1: ИНСТРУМЕНТ И РАСХОДНИКИ -->
   <div id="mod-tools" class="hidden">
-    <div id="tab-tools">
-      <input id="search" type="text" oninput="renderTools()" placeholder="Поиск по названию или EL-...">
-      <div class="row" style="margin-bottom:10px;">
-        <button onclick="setFlt('all')" class="btn-sm" style="flex:1;">Все</button>
-        <button onclick="setFlt('stock')" class="btn-green btn-sm" style="flex:1;">Склад</button>
-        <button onclick="setFlt('work')" class="btn-amber btn-sm" style="flex:1;">Работа</button>
-        <button onclick="setFlt('repair')" class="btn-red btn-sm" style="flex:1;">Ремонт</button>
+    <div id="t-hdr" class="card" style="background:#1e293b;color:#fff;"></div>
+    <div id="t-sec-tools" class="hidden">
+      <div id="t-admin-add" class="card hidden">
+        <h3>➕ Добавить инструмент</h3>
+        <input id="t-name" placeholder="Название (напр. Перфоратор Bosch)">
+        <input id="t-sn" placeholder="Серийный номер">
+        <div class="row"><input id="t-cost" type="number" placeholder="Цена закупки, ₽"><input id="t-price" type="number" placeholder="Цена клиента, ₽"></div>
+        <label style="font-size:12px;color:#64748b;">Фото инструмента:</label><input type="file" id="t-photo" accept="image/*">
+        <button onclick="addTool()" class="btn-green">Сохранить и создать QR</button>
       </div>
-      <div id="tools-list"></div>
+      <div id="t-list"></div>
     </div>
-
-    <div id="tab-cons" class="hidden">
-      <div class="card" style="background:#eff6ff; border:1px solid #bfdbfe; font-size:12px; color:#1e40af;">
-        ℹ️ Здесь учитываются только остатки основного склада (возвраты излишков и инвентаризация). Новые закупки вносятся напрямую в этап объекта.
+    <div id="t-sec-cons" class="hidden">
+      <div id="c-admin-add" class="card hidden">
+        <h3>📦 Поступление / новый расходник</h3>
+        <input id="c-name" placeholder="Название (напр. Кабель ВВГнг 3x2.5)">
+        <div class="row"><input id="c-qty" type="number" step="any" placeholder="Кол-во"><input id="c-unit" placeholder="Ед. (м, шт, бухта)"></div>
+        <button onclick="addCons()" class="btn-green">Добавить на склад</button>
       </div>
-      <div id="admin-add-cons" class="card hidden">
-        <h3 style="margin-bottom:8px;">➕ Позиция на склад (инвентаризация)</h3>
-        <input id="c-name" placeholder="Наименование">
-        <div class="row">
-          <input id="c-qty" type="number" placeholder="Кол-во" style="margin:0;">
-          <select id="c-unit" style="margin:0;"><option value="шт">шт</option><option value="м">м</option><option value="уп">уп</option><option value="бухта">бухта</option></select>
-          <button onclick="addCons()" class="btn-dark" style="width:auto; margin:0;">+</button>
-        </div>
-      </div>
-      <div id="cons-list"></div>
+      <div id="c-list"></div>
     </div>
-
-    <div id="tab-scan" class="hidden">
-      <div class="card" style="text-align:center;">
-        <h3 style="margin-bottom:8px;">📷 Сканер QR-кода инструмента</h3>
-        <video id="qr-video" class="hidden" style="width:100%; border-radius:10px; background:#000; margin-bottom:10px;" playsinline></video>
-        <div class="row"><button onclick="startCam()">Включить камеру</button><button onclick="stopCam()" style="background:#e2e8f0; color:#334155;">Стоп</button></div>
-        <p id="scan-status" style="font-size:12px; color:#64748b; margin-top:6px;"></p>
-      </div>
+    <div id="t-sec-scan" class="hidden">
       <div class="card">
-        <h3 style="margin-bottom:8px;">Ручной ввод номера</h3>
-        <div class="row"><input id="man-inv" placeholder="EL-001" style="margin:0; text-transform:uppercase;"><button onclick="findManual()" class="btn-dark" style="width:auto; margin:0;">Найти</button></div>
+        <h3>📷 Сканер QR-кода</h3>
+        <button id="btn-cam" onclick="startCam()">Включить камеру</button>
+        <video id="qr-video" class="hidden" style="width:100%;border-radius:10px;margin-bottom:8px;"></video>
+        <p id="scan-status" style="font-size:12px;color:#64748b;text-align:center;">или введите код вручную:</p>
+        <div class="row"><input id="manual-code" placeholder="TOOL-1"><button onclick="manualScan()" class="btn-sm" style="padding:10px 14px;">Найти</button></div>
       </div>
+      <div id="scan-result"></div>
     </div>
-
-    <div id="tab-logs" class="hidden"><div id="logs-list"></div></div>
-
-    <div id="tab-admin" class="hidden">
-      <div class="row" style="margin-bottom:10px;">
-        <button onclick="exportExcel()" class="btn-green" style="margin:0;">📊 Отчёт Excel</button>
-        <button onclick="printAllQR()" class="btn-dark" style="margin:0;">🖨️ Печать QR</button>
-      </div>
-      <div class="row" style="margin-bottom:12px;">
-        <button onclick="downloadTemplate()" class="btn-amber" style="margin:0;">📥 Шаблон Excel</button>
-        <button onclick="document.getElementById('excel-imp').click()" class="btn-dark" style="margin:0;">📤 Загрузить Excel</button>
-        <input id="excel-imp" type="file" accept=".xlsx,.xls" class="hidden" onchange="importExcel(this)">
-      </div>
-      <div class="card">
-        <h3 style="margin-bottom:8px;">🔧 Добавить инструмент</h3>
-        <input id="t-name" placeholder="Название инструмента">
-        <input id="t-ser" placeholder="Серийный номер">
-        <div class="row">
-          <input id="t-date" type="date" style="margin-bottom:8px;" title="Дата поступления">
-          <input id="t-price" type="number" placeholder="Стоимость, ₽" style="margin-bottom:8px;">
-        </div>
-        <input id="t-photo" type="file" accept="image/*" style="font-size:12px;">
-        <button id="btn-add-tool" onclick="addTool()">Добавить на склад</button>
-      </div>
+    <div id="t-sec-logs" class="hidden"><div id="t-logs-list"></div></div>
+    <div id="t-sec-qr" class="hidden">
+      <div class="card"><h3>🖨️ Печать QR-наклеек</h3><button onclick="window.print()" class="btn-green">Распечатать все наклейки</button></div>
+      <div id="qr-batch"></div>
     </div>
   </div>
-  <!-- МОДУЛЬ 2: ОБЪЕКТЫ, СМЕТЫ, ЗП И ФИНАНСЫ -->
+  <!-- МОДУЛЬ 2: ОБЪЕКТЫ, ЭТАПЫ И СМЕТА -->
   <div id="mod-projects" class="hidden">
-    <!-- Вкладка 1: Объекты и этапы -->
-    <div id="ptab-objs">
-      <div id="admin-dash-card" class="card hidden" style="background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff;">
-        <div class="row" style="justify-content:space-between; margin-bottom:4px;">
-          <strong style="font-size:14px;">📊 Сводка руководителя</strong>
-          <input id="dash-month" type="month" onchange="renderDashboard()" style="width:auto; padding:4px 8px; margin:0; font-size:12px; background:#334155; color:#fff; border:none;">
-        </div>
-        <div id="dash-grid" class="stat-grid"></div>
+    <div id="p-hdr" class="card" style="background:#1e293b;color:#fff;"></div>
+    <div id="p-view-list">
+      <div class="row" style="margin-bottom:10px;flex-wrap:wrap;">
+        <button id="pf-all" onclick="setProjFilter('all')" class="btn-sm" style="flex:1;">Все</button>
+        <button id="pf-work" onclick="setProjFilter('work')" class="btn-sm btn-amber" style="flex:1;">В работе</button>
+        <button id="pf-wait" onclick="setProjFilter('wait_pay')" class="btn-sm btn-purple" style="flex:1;">Ожидает оплаты</button>
+        <button id="pf-done" onclick="setProjFilter('done')" class="btn-sm btn-green" style="flex:1;">Завершён</button>
       </div>
-
-      <div id="proj-list-view">
-        <input id="proj-search" type="text" oninput="renderProjectsList()" placeholder="🔍 Поиск объекта...">
-        <div id="proj-list"></div>
-      </div>
-
-      <div id="proj-detail-view" class="hidden">
-        <button onclick="closeProjectDetail()" class="btn-dark btn-sm" style="margin-bottom:10px;">← Назад к объектам</button>
-        <div class="card">
-          <h3 id="pd-title" style="margin-bottom:8px;"></h3>
-          <div class="row">
-            <input id="new-stage-name" placeholder="Новый этап (напр. Черновой монтаж)" style="margin:0;">
-            <button onclick="addStage()" class="btn-green" style="width:auto; margin:0;">+ Этап</button>
-          </div>
-        </div>
-        <div id="stages-list"></div>
-      </div>
-
-      <div id="stage-detail-view" class="hidden">
-        <button onclick="closeStageDetail()" class="btn-dark btn-sm" style="margin-bottom:10px;">← Назад к этапам объекта</button>
-        <div class="card">
-          <div class="row" style="justify-content:space-between; margin-bottom:6px;">
-            <strong id="sd-obj-name" style="font-size:12px; color:#64748b;"></strong>
-            <select id="sd-status" onchange="changeStageStatus()" style="width:auto; padding:4px 8px; margin:0; font-size:12px; font-weight:bold;">
-              <option value="work">🟡 В работе</option>
-              <option value="wait_pay">🟠 Ожидание оплаты</option>
-              <option value="done">🟢 Завершён</option>
-            </select>
-          </div>
-          <h3 id="sd-title" style="margin-bottom:6px;"></h3>
-          <div id="sd-dates" style="font-size:12px; color:#64748b; margin-bottom:8px;"></div>
-          <div id="sd-totals" style="background:#f8fafc; padding:10px; border-radius:10px; font-size:13px; line-height:1.6;"></div>
-        </div>
-
-        <div class="row" style="margin-bottom:10px;">
-          <button id="btn-est-prelim" onclick="switchEstType('prelim')" class="btn-sm" style="flex:1;">📝 КП (Предварит.)</button>
-          <button id="btn-est-fact" onclick="switchEstType('fact')" class="btn-green btn-sm" style="flex:1;">📑 Отчёт (Факт)</button>
-        </div>
-
-        <div class="card">
-          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-            <strong id="est-box-title">Позиции</strong>
-            <button onclick="exportStagePDF()" class="btn-purple btn-sm">📄 Скачать PDF</button>
-          </div>
-          <div id="stage-items-list"></div>
-          <div style="border-top:1px solid #e2e8f0; margin-top:10px; padding-top:10px;">
-            <div class="row" style="margin-bottom:6px;">
-              <button onclick="openAddItemModal('work')" class="btn-sm" style="flex:1;">+ Работа</button>
-              <button onclick="openAddItemModal('mat')" class="btn-green btn-sm" style="flex:1;">+ Материал / Чек</button>
-              <button id="btn-from-stock" onclick="openStockToStageModal()" class="btn-amber btn-sm" style="flex:1;">📦 Со склада</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="sd-payments-card" class="card hidden">
-          <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-            <strong>💳 Оплаты от заказчика</strong>
-            <span id="sd-paid-badge" class="badge stock"></span>
-          </div>
-          <div id="sd-payments-list" style="margin-bottom:8px;"></div>
-          <div class="row">
-            <input id="sp-amount" type="number" placeholder="Сумма оплаты, ₽" style="margin:0;">
-            <input id="sp-comm" placeholder="Примечание" style="margin:0;">
-            <button onclick="addStagePayment()" class="btn-green" style="width:auto; margin:0;">+</button>
-          </div>
-        </div>
-      </div>
+      <div id="p-list"></div>
     </div>
+    <div id="p-view-stages" class="hidden"></div>
+    <div id="p-view-stage-detail" class="hidden"></div>
+  </div>
 
-    <!-- Вкладка 2: Работы бригады и ЗП -->
-    <div id="ptab-work" class="hidden">
-      <div id="worker-sal-card" class="card" style="background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff;">
-        <div class="row" style="justify-content:space-between; margin-bottom:6px;">
-          <span style="font-size:13px; opacity:0.85;">Мой баланс за месяц</span>
-          <input id="sal-month" type="month" onchange="renderWorkAndSalary()" style="width:auto; padding:4px 8px; margin:0; font-size:12px; background:#334155; color:#fff; border:none;">
-        </div>
-        <div id="my-balance-box" style="font-size:14px; line-height:1.7;"></div>
+  <!-- МОДУЛЬ 3: РАБОТЫ И ЗАРПЛАТА -->
+  <div id="mod-salary" class="hidden">
+    <div id="s-hdr" class="card" style="background:#1e293b;color:#fff;"></div>
+    <div id="s-worker-form" class="card hidden">
+      <h3>📝 Сдать выполненную работу</h3>
+      <select id="sw-obj" onchange="fillWorkStages()"></select>
+      <select id="sw-stage"></select>
+      <div class="row" style="margin-bottom:8px;">
+        <button id="sw-mode-piece" onclick="setWorkMode('piece')" class="btn-sm" style="flex:1;">Сдельно (прайс)</button>
+        <button id="sw-mode-shift" onclick="setWorkMode('shift')" class="btn-sm btn-green" style="flex:1;">📅 Смена (оклад/день)</button>
       </div>
-
-      <div class="card">
-        <h3 style="margin-bottom:8px;">➕ Сдать выполненную работу</h3>
-        <select id="w-obj" onchange="fillStageSelect('w-obj','w-stage')"></select>
-        <select id="w-stage"></select>
-        <select id="w-type" onchange="calcWorkPreview()"></select>
-        <div class="row">
-          <input id="w-qty" type="number" min="0.1" step="0.1" value="1" oninput="calcWorkPreview()" style="margin:0; width:100px;">
-          <input id="w-comm" placeholder="Комментарий" style="margin:0;">
-        </div>
-        <div id="w-preview" style="font-weight:bold; color:#059669; margin:8px 0; font-size:14px;"></div>
-        <button onclick="submitWork()" class="btn-green">Отправить на проверку</button>
+      <div id="sw-piece-box">
+        <select id="sw-type" onchange="calcWorkSum()"></select>
+        <input id="sw-qty" type="number" step="any" placeholder="Количество" oninput="calcWorkSum()">
       </div>
-
-      <div id="approve-box" class="card hidden">
-        <h3 style="margin-bottom:8px;">⏳ На подтверждении (<span id="pending-cnt">0</span>)</h3>
-        <div id="pending-list"></div>
+      <div id="sw-shift-box" class="hidden">
+        <input id="sw-days" type="number" step="0.5" value="1" placeholder="Кол-во смен (напр. 1)" oninput="calcWorkSum()">
       </div>
-
-      <div id="admin-pay-box" class="card hidden">
-        <h3 style="margin-bottom:8px;">💸 Выплатить аванс / ЗП</h3>
-        <select id="pay-emp"></select>
-        <div class="row">
-          <input id="pay-sum" type="number" placeholder="Сумма, ₽" style="margin:0;">
-          <select id="pay-type" style="margin:0; width:110px;"><option value="Аванс">Аванс</option><option value="Зарплата">Зарплата</option><option value="Премия">Премия</option></select>
-        </div>
-        <input id="pay-comm" placeholder="Примечание" style="margin-top:8px;">
-        <button onclick="addPayment()" class="btn-dark">Провести выплату</button>
-        <h4 style="margin:12px 0 6px;">Сводка ЗП за месяц:</h4>
-        <div id="brigade-summary"></div>
-      </div>
-
-      <div id="my-work-list"></div>
+      <div id="sw-calc-info" style="font-weight:bold;color:#059669;margin-bottom:8px;"></div>
+      <input id="sw-note" placeholder="Комментарий (необязательно)">
+      <button onclick="submitWork()" class="btn-green">Отправить на проверку</button>
     </div>
-
-    <!-- Вкладка 3: Накладные расходы -->
-    <div id="ptab-overhead" class="hidden">
-      <div class="card">
-        <h3 style="margin-bottom:8px;">🧾 Новый накладной расход</h3>
-        <div class="row">
-          <select id="oh-cat" style="margin:0;">
-            <option value="Бензин / ГСМ">⛽ Бензин / ГСМ</option>
-            <option value="Аренда гаража / склада">🏠 Аренда гаража</option>
-            <option value="Ремонт служебного авто">🚗 Ремонт авто</option>
-            <option value="Ремонт инструмента">🛠️ Ремонт инструмента</option>
-            <option value="Спецодежда и СИЗ">🦺 Спецодежда</option>
-            <option value="Прочие расходы">📦 Прочее</option>
-          </select>
-          <input id="oh-sum" type="number" placeholder="Сумма, ₽" style="margin:0; width:120px;">
-        </div>
-        <div class="row" style="margin-top:8px;">
-          <input id="oh-date" type="date" style="margin:0; width:145px;">
-          <input id="oh-comm" placeholder="Комментарий" style="margin:0;">
-        </div>
-        <button onclick="addOverhead()" class="btn-red" style="margin-top:8px;">Записать расход</button>
-      </div>
-      <div id="overhead-list"></div>
+    <div id="s-approve-box" class="card hidden">
+      <h3>⏳ На подтверждении</h3>
+      <div id="s-pending-list"></div>
     </div>
-
-    <!-- Вкладка 4: Конструктор отчётов -->
-    <div id="ptab-reports" class="hidden">
+    <div id="s-admin-box" class="hidden">
       <div class="card">
-        <h3 style="margin-bottom:8px;">📈 Финансовый и рабочий отчёт</h3>
-        <div class="row">
-          <input id="rep-from" type="date" style="margin:0;">
-          <input id="rep-to" type="date" style="margin:0;">
-        </div>
-        <select id="rep-obj" style="margin-top:8px;"></select>
-        <select id="rep-emp"></select>
-        <div class="row">
-          <button onclick="buildReport()" class="btn-purple" style="margin:0;">Сформировать</button>
-          <button onclick="exportReportExcel()" class="btn-green" style="margin:0;">📊 В Excel</button>
-        </div>
+        <h3>💳 Фактический долг по ЗП (на текущий момент)</h3>
+        <div id="s-debt-list"></div>
       </div>
-      <div id="report-output"></div>
+      <div class="card">
+        <h3>💸 Выдать зарплату / аванс</h3>
+        <select id="sp-emp"></select>
+        <div class="row"><input id="sp-amount" type="number" placeholder="Сумма, ₽"><input id="sp-date" type="date"></div>
+        <input id="sp-note" placeholder="Комментарий (напр. Аванс)">
+        <button onclick="addPayment()" class="btn-green">Записать выплату</button>
+      </div>
+      <div class="card">
+        <h3>📜 Журнал выплат</h3>
+        <div id="s-pay-history"></div>
+      </div>
     </div>
   </div>
-  <!-- МОДУЛЬ 3: ЕДИНЫЕ СПРАВОЧНИКИ И НАСТРОЙКИ (РУКОВОДИТЕЛЬ) -->
-  <div id="mod-settings" class="hidden">
+
+  <!-- МОДУЛЬ 4: НАКЛАДНЫЕ РАСХОДЫ -->
+  <div id="mod-overhead" class="hidden">
+    <div id="o-hdr" class="card" style="background:#1e293b;color:#fff;"></div>
+    <div class="card">
+      <h3>➕ Добавить расход</h3>
+      <select id="oh-cat">
+        <option value="Бензин/ГСМ">Бензин/ГСМ</option>
+        <option value="Аренда гаража">Аренда гаража</option>
+        <option value="Расходы на авто">Расходы на авто</option>
+        <option value="Спецодежда">Спецодежда</option>
+        <option value="Ремонт инструмента">Ремонт инструмента</option>
+        <option value="Прочее">Прочее</option>
+      </select>
+      <div class="row"><input id="oh-amount" type="number" placeholder="Сумма, ₽"><input id="oh-date" type="date"></div>
+      <input id="oh-note" placeholder="Комментарий (напр. Заправка Лукойл)">
+      <button onclick="addOverhead()" class="btn-purple">Сохранить расход</button>
+    </div>
+    <div class="card">
+      <h3>📊 Структура расходов</h3>
+      <div id="oh-chart"></div>
+    </div>
+    <div class="card">
+      <h3>📋 Список расходов</h3>
+      <input id="oh-search" placeholder="🔍 Поиск по категории или комментарию..." oninput="renderOverheads()">
+      <div id="oh-list"></div>
+    </div>
+  </div>
+
+  <!-- МОДУЛЬ 5: ОТЧЁТЫ -->
+  <div id="mod-reports" class="hidden">
+    <div id="r-hdr" class="card" style="background:#1e293b;color:#fff;"></div>
+    <div class="card">
+      <h3>📅 Фильтр отчёта</h3>
+      <div class="row"><input id="rep-from" type="date"><input id="rep-to" type="date"></div>
+      <select id="rep-obj"></select>
+      <select id="rep-emp"></select>
+      <div class="row">
+        <button onclick="renderReports()">Показать</button>
+        <button onclick="exportReportExcel()" class="btn-green">📥 В Excel</button>
+      </div>
+    </div>
+    <div id="rep-summary" class="card"></div>
+  </div>
+
+  <!-- МОДУЛЬ 6: СПРАВОЧНИКИ -->
+  <div id="mod-references" class="hidden">
+    <div id="ref-hdr" class="card" style="background:#1e293b;color:#fff;"></div>
     <div class="card">
       <details open>
-        <summary style="font-size:16px; font-weight:bold; cursor:pointer; list-style:none;">👷 Сотрудники и оклады</summary>
+        <summary style="font-weight:bold;cursor:pointer;">👷 Сотрудники и оклады</summary>
         <div style="margin-top:10px;">
-          <input id="e-name" placeholder="Фамилия Имя">
+          <input id="ref-emp-name" placeholder="ФИО сотрудника">
           <div class="row">
-            <input id="e-pin" maxlength="4" placeholder="ПИН (4 цифры)">
-            <select id="e-role">
+            <input id="ref-emp-pin" placeholder="ПИН-код">
+            <select id="ref-emp-role">
               <option value="worker">Монтажник</option>
               <option value="foreman">Прораб</option>
               <option value="admin">Руководитель</option>
             </select>
           </div>
-          <button onclick="addEmp()" class="btn-dark">Добавить сотрудника</button>
-          <div id="admin-emps-list"></div>
-        </div>
-      </details>
-    </div>
-
-    <div class="card">
-      <details>
-        <summary style="font-size:16px; font-weight:bold; cursor:pointer; list-style:none;">🏗️ Объекты (<span id="objs-count">0</span>)</summary>
-        <div style="margin-top:10px;">
-          <div class="row" style="margin-bottom:8px;">
-            <input id="o-name" placeholder="Новый объект / адрес" style="margin:0;">
-            <button onclick="addObj()" class="btn-dark" style="width:auto; margin:0;">+</button>
-          </div>
-          <input id="o-search" type="text" oninput="renderSettingsLists()" placeholder="🔍 Поиск объекта..." style="background:#f8fafc;">
-          <div id="admin-objs-list" style="max-height:260px; overflow-y:auto;"></div>
-        </div>
-      </details>
-    </div>
-
-    <div class="card">
-      <details>
-        <summary style="font-size:16px; font-weight:bold; cursor:pointer; list-style:none;">🏷️ Прайс-лист работ (2 цены)</summary>
-        <div style="margin-top:10px;">
-          <div class="row" style="margin-bottom:10px;">
-            <button onclick="downloadPriceTemplate()" class="btn-amber btn-sm" style="flex:1;">📥 Шаблон прайса</button>
-            <button onclick="document.getElementById('price-imp').click()" class="btn-dark btn-sm" style="flex:1;">📤 Загрузить прайс</button>
-            <input id="price-imp" type="file" accept=".xlsx,.xls" class="hidden" onchange="importPriceExcel(this)">
-          </div>
-          <input id="p-name" placeholder="Наименование работы">
           <div class="row">
-            <input id="p-rate" type="number" placeholder="ЗП работнику, ₽" style="margin:0;">
-            <input id="p-client-rate" type="number" placeholder="Цена заказчику, ₽" style="margin:0;">
-            <select id="p-unit" style="margin:0; width:85px;"><option value="шт">шт</option><option value="м">м</option><option value="точка">точка</option><option value="смена">смена</option></select>
+            <select id="ref-emp-saltype">
+              <option value="month">Оклад в месяц</option>
+              <option value="day">Оклад в день (смена)</option>
+            </select>
+            <input id="ref-emp-sal" type="number" placeholder="Сумма оклада, ₽">
           </div>
-          <button onclick="addWorkType()" class="btn-green" style="margin-top:8px;">Добавить в прайс</button>
-          <div id="settings-price-list" style="margin-top:8px; max-height:280px; overflow-y:auto;"></div>
+          <button onclick="addEmp()" class="btn-green">Добавить сотрудника</button>
+          <div id="ref-emp-list" style="margin-top:8px;"></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary style="font-weight:bold;cursor:pointer;">🏢 Объекты</summary>
+        <div style="margin-top:10px;">
+          <div class="row">
+            <input id="ref-obj-name" placeholder="Название / адрес объекта">
+            <button onclick="addObj()" class="btn-sm btn-green" style="padding:10px 14px;">+</button>
+          </div>
+          <div id="ref-obj-list"></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary style="font-weight:bold;cursor:pointer;">📑 Прайс-лист на работы</summary>
+        <div style="margin-top:10px;">
+          <input id="ref-wt-name" placeholder="Наименование работы">
+          <div class="row">
+            <select id="ref-wt-unit">
+              <option value="шт">шт</option><option value="м">м</option><option value="кв.м">кв.м</option>
+              <option value="комплекс">комплекс</option><option value="услуга">услуга</option>
+              <option value="выезд">выезд</option><option value="пролет">пролет</option>
+            </select>
+            <input id="ref-wt-rate" type="number" placeholder="ЗП работнику, ₽">
+            <input id="ref-wt-client" type="number" placeholder="Цена заказчику, ₽">
+          </div>
+          <div class="row">
+            <button onclick="addWorkType()" class="btn-green">Добавить</button>
+            <button onclick="downloadPriceTemplate()" class="btn-sm btn-amber">📥 Шаблон</button>
+            <label class="btn-sm btn-dark" style="cursor:pointer;border-radius:10px;">📤 Excel<input type="file" accept=".xlsx,.xls" class="hidden" onchange="importPriceExcel(this)"></label>
+          </div>
+          <input id="ref-wt-search" placeholder="🔍 Поиск по прайсу..." oninput="renderRefPriceList()" style="margin-top:6px;">
+          <div id="ref-wt-list" style="max-height:320px;overflow-y:auto;"></div>
         </div>
       </details>
     </div>
   </div>
 </div>
 
-<!-- МОДАЛЬНЫЕ ОКНА СКЛАДА -->
-<div id="modal" class="modal hidden">
-  <div class="card" style="width:100%; max-width:410px; max-height:90vh; overflow-y:auto;">
-    <div class="row" style="justify-content:space-between; margin-bottom:6px;">
-      <strong id="m-inv" style="color:#2563eb;"></strong>
-      <button onclick="document.getElementById('modal').classList.add('hidden')" class="btn-sm" style="background:#e2e8f0; color:#000;">✕</button>
-    </div>
-    <h3 id="m-name" style="margin-bottom:6px;"></h3>
-    <img id="m-photo" class="thumb hidden">
-    <p id="m-info" style="font-size:13px; color:#475569; margin-bottom:12px;"></p>
-    <div id="m-actions"></div>
-    <div id="m-admin-edit" style="margin-top:12px; border-top:1px solid #e2e8f0; padding-top:10px;"></div>
-    <div style="text-align:center; margin-top:12px;">
-      <img id="m-qr" style="width:110px; height:110px; border:1px solid #cbd5e1; padding:4px; border-radius:8px;">
-    </div>
-  </div>
-</div>
-<div id="cons-modal" class="modal hidden">
-  <div class="card" style="width:100%; max-width:380px;">
-    <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-      <strong id="cm-title"></strong>
-      <button onclick="document.getElementById('cons-modal').classList.add('hidden')" class="btn-sm" style="background:#e2e8f0; color:#000;">✕</button>
-    </div>
-    <p id="cm-stock" style="font-size:13px; color:#64748b; margin-bottom:10px;"></p>
-    <input id="cm-qty" type="number" min="1" value="1">
-    <select id="cm-obj"></select>
-    <button onclick="takeCons()">Списать на объект</button>
-    <div id="cm-admin-box" class="hidden" style="border-top:1px solid #e2e8f0; padding-top:10px; margin-top:6px;">
-      <div class="row">
-        <button onclick="addConsQty()" class="btn-green" style="margin:0;">+ Пополнить</button>
-        <button onclick="delCons()" class="btn-red" style="width:auto; margin:0;">🗑️</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ ПОЗИЦИИ / ЧЕКА В ЭТАП -->
-<div id="item-modal" class="modal hidden">
-  <div class="card" style="width:100%; max-width:410px; max-height:90vh; overflow-y:auto;">
-    <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-      <strong id="im-title">Добавить позицию</strong>
-      <button onclick="closeItemModal()" class="btn-sm" style="background:#e2e8f0; color:#000;">✕</button>
-    </div>
-
-    <div id="im-qr-box" class="hidden" style="background:#f8fafc; padding:8px; border-radius:10px; margin-bottom:10px; border:1px dashed #94a3b8;">
-      <div class="row" style="justify-content:space-between;">
-        <span style="font-size:12px; font-weight:bold;">🧾 Сканер QR кассового чека</span>
-        <button onclick="startReceiptCam()" class="btn-amber btn-sm">📷 Сканировать чек</button>
-      </div>
-      <video id="rec-video" class="hidden" style="width:100%; border-radius:8px; margin-top:8px; background:#000;" playsinline></video>
-      <p id="rec-qr-info" style="font-size:11px; color:#059669; margin-top:4px;"></p>
-    </div>
-
-    <div id="im-price-pick-box" class="hidden">
-      <label style="font-size:11px; color:#64748b;">Выбрать из прайса (или вписать ниже вручную):</label>
-      <select id="im-price-sel" onchange="fillItemFromPrice()"></select>
-    </div>
-
-    <input id="im-name" placeholder="Наименование работы или материала">
-    <div class="row">
-      <input id="im-qty" type="number" step="0.01" value="1" placeholder="Кол-во" style="margin:0;">
-      <select id="im-unit" style="margin:0; width:95px;"><option value="шт">шт</option><option value="м">м</option><option value="уп">уп</option><option value="точка">точка</option><option value="компл">компл</option></select>
-    </div>
-    <div class="row" style="margin-top:8px;">
-      <div style="flex:1;">
-        <label id="im-cost-lbl" style="font-size:11px; color:#64748b;">Себестоимость, ₽</label>
-        <input id="im-cost" type="number" placeholder="0" oninput="autoCalcClientPrice()" style="margin:0;">
-      </div>
-      <div style="flex:1;">
-        <label style="font-size:11px; color:#64748b;">Заказчику (+15%), ₽</label>
-        <input id="im-client" type="number" placeholder="0" style="margin:0;">
-      </div>
-    </div>
-    <button onclick="saveStageItem()" class="btn-green" style="margin-top:10px;">Сохранить в смету</button>
-  </div>
-</div>
-
-<!-- МОДАЛЬНОЕ ОКНО: СПИСАНИЕ СО СКЛАДА В ЭТАП -->
-<div id="stock-stage-modal" class="modal hidden">
-  <div class="card" style="width:100%; max-width:390px;">
-    <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-      <strong>📦 Взять материал со склада в этап</strong>
-      <button onclick="document.getElementById('stock-stage-modal').classList.add('hidden')" class="btn-sm" style="background:#e2e8f0; color:#000;">✕</button>
-    </div>
-    <select id="ss-cons"></select>
-    <input id="ss-qty" type="number" min="0.1" step="0.1" value="1" placeholder="Количество">
-    <div class="row">
-      <div style="flex:1;">
-        <label style="font-size:11px; color:#64748b;">Себестоимость (если известна)</label>
-        <input id="ss-cost" type="number" placeholder="0" oninput="const v=Number(this.value)||0; document.getElementById('ss-client').value = v > 0 ? Math.round(v*1.15) : '';" style="margin:0;">
-      </div>
-      <div style="flex:1;">
-        <label style="font-size:11px; color:#64748b;">Цена заказчику, ₽</label>
-        <input id="ss-client" type="number" placeholder="Ввести вручную" style="margin:0;">
-      </div>
-    </div>
-    <button onclick="transferStockToStage()" class="btn-amber" style="margin-top:10px;">Перенести в этап</button>
-  </div>
-</div>
-
-<div id="zoom-modal" class="modal hidden" onclick="this.classList.add('hidden')" style="z-index:40; background:rgba(0,0,0,0.9);">
-  <img id="zoom-img" style="max-width:96vw; max-height:92vh; object-fit:contain; border-radius:8px;">
-</div>
-<div id="print-area" class="hidden"></div>
-
-<!-- ПАНЕЛИ НАВИГАЦИИ -->
+<!-- НИЖНЯЯ ПАНЕЛЬ ИНСТРУМЕНТОВ -->
 <nav id="nav-tools" class="hidden">
-  <button onclick="tab('tools')" id="n-tools" class="nb-blue active"><span>🔧</span>Инструмент</button>
-  <button onclick="tab('cons')" id="n-cons" class="nb-green"><span>📦</span>Склад</button>
-  <button onclick="tab('scan')" id="n-scan" class="nb-amber"><span>📷</span>QR-код</button>
-  <button onclick="tab('logs')" id="n-logs" class="nb-purple"><span>📋</span>Журнал</button>
-  <button onclick="tab('admin')" id="n-admin" class="nb-red hidden"><span>⚙️</span>Админ</button>
+  <button id="nt-tools" class="nb-green active" onclick="showToolTab('tools')"><span>🧰</span>Инструмент</button>
+  <button id="nt-cons" class="nb-blue" onclick="showToolTab('cons')"><span>📦</span>Склад</button>
+  <button id="nt-scan" class="nb-amber" onclick="showToolTab('scan')"><span>📷</span>Сканер</button>
+  <button id="nt-logs" class="nb-purple" onclick="showToolTab('logs')"><span>📜</span>Журнал</button>
+  <button id="nt-qr" class="nb-red" onclick="showToolTab('qr')"><span>🖨️</span>QR</button>
 </nav>
 
-<nav id="nav-projects" class="hidden">
-  <button onclick="ptab('objs')" id="np-objs" class="nb-blue active"><span>🏗️</span>Объекты</button>
-  <button onclick="ptab('work')" id="np-work" class="nb-green"><span>👷</span>Работы / ЗП</button>
-  <button onclick="ptab('overhead')" id="np-overhead" class="nb-amber hidden"><span>🧾</span>Расходы</button>
-  <button onclick="ptab('reports')" id="np-reports" class="nb-purple hidden"><span>📈</span>Отчёты</button>
-</nav>
+<!-- МОДАЛЬНОЕ ОКНО -->
+<div id="modal" class="modal hidden" onclick="if(event.target===this)closeModal()">
+  <div id="modal-body" class="card" style="width:100%;max-width:440px;max-height:90vh;overflow-y:auto;"></div>
+</div>
+
+<!-- ОБЛАСТЬ ПЕЧАТИ И PDF -->
+<div id="print-area" class="hidden"></div>
+<div id="pdf-render-box" style="position:fixed;left:-9999px;top:0;width:720px;background:#fff;color:#000;padding:24px;"></div>
 
 <script src="app-core.js"></script>
 <script src="app-tools.js"></script>

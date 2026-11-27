@@ -1,5 +1,5 @@
-const SB_URL = 'https://ВАШ_АДРЕС_ПРОЕКТА.supabase.co';
-const SB_KEY = 'ВАШ_КЛЮЧ_SUPABASE';
+const SB_URL = 'https://hedvmvvagozcnfufvnnh.supabase.co';
+const SB_KEY = 'sb_publishable_ROfy0OkzwSF-mA9xZEt0UQ_dZ0agsaQ';
 
 let user = null, activeMod = null;
 let emps = [], objs = [], wTypes = [], stages = [], stageItems = [], stagePays = [];

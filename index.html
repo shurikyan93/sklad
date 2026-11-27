@@ -119,13 +119,13 @@
   <div id="mod-tools" class="hidden">
     <div id="t-hdr" class="card" style="background:#1e293b;color:#fff;"></div>
     <div id="t-sec-tools" class="hidden">
-      <div id="t-admin-add" class="card hidden">
+            <div id="t-admin-add" class="card hidden">
         <h3>➕ Добавить инструмент</h3>
         <input id="t-name" placeholder="Название (напр. Перфоратор Bosch)">
         <input id="t-sn" placeholder="Серийный номер">
-        <div class="row"><input id="t-cost" type="number" placeholder="Цена закупки, ₽"><input id="t-price" type="number" placeholder="Цена клиента, ₽"></div>
+        <div class="row"><input id="t-date" type="date" title="Дата поступления"><input id="t-cost" type="number" placeholder="Стоимость, ₽"></div>
         <label style="font-size:12px;color:#64748b;">Фото инструмента:</label><input type="file" id="t-photo" accept="image/*">
-        <button onclick="addTool()" class="btn-green">Сохранить и создать QR</button>
+        <button id="btn-add-tool" onclick="addTool()" class="btn-green">Сохранить и создать QR</button>
       </div>
       <div id="t-list"></div>
     </div>

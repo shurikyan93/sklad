@@ -138,13 +138,17 @@
       </div>
       <div id="c-list"></div>
     </div>
-    <div id="t-sec-scan" class="hidden">
+        <div id="t-sec-scan" class="hidden">
       <div class="card">
         <h3>📷 Сканер QR-кода</h3>
         <button id="btn-cam" onclick="startCam()">Включить камеру</button>
         <video id="qr-video" class="hidden" style="width:100%;border-radius:10px;margin-bottom:8px;"></video>
         <p id="scan-status" style="font-size:12px;color:#64748b;text-align:center;">или введите код вручную:</p>
         <div class="row"><input id="manual-code" placeholder="TOOL-1"><button onclick="manualScan()" class="btn-sm" style="padding:10px 14px;">Найти</button></div>
+      </div>
+      <div class="card">
+        <h3>🖨️ Печать QR-наклеек</h3>
+        <button onclick="printAllQR()" class="btn-green">Распечатать все наклейки</button>
       </div>
       <div id="scan-result"></div>
     </div>
@@ -334,7 +338,6 @@
   <button id="nt-cons" class="nb-blue" onclick="showToolTab('cons')"><span>📦</span>Склад</button>
   <button id="nt-scan" class="nb-amber" onclick="showToolTab('scan')"><span>📷</span>Сканер</button>
   <button id="nt-logs" class="nb-purple" onclick="showToolTab('logs')"><span>📜</span>Журнал</button>
-  <button id="nt-qr" class="nb-red" onclick="showToolTab('qr')"><span>🖨️</span>QR</button>
 </nav>
 
 <!-- МОДАЛЬНОЕ ОКНО -->

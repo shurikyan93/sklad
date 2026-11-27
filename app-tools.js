@@ -357,3 +357,38 @@ function stopCam() {
   const vid = document.getElementById('qr-video');
   if (vid) vid.classList.add('hidden');
 }
+function downloadConsTemplate() {
+  if (typeof XLSX === 'undefined') return alert('Excel библиотека не загружена');
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['Наименование', 'Количество', 'Ед. изм.'],
+    ['Кабель ВВГнг-LS 3х2.5', 200, 'м'],
+    ['Автомат 1П 16А', 15, 'шт']
+  ]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Расходники');
+  XLSX.writeFile(wb, 'Шаблон_расходники.xlsx');
+}
+
+async function importConsExcel(input) {
+  const file = input.files.item(0);
+  if (!file || typeof XLSX === 'undefined') return;
+  const wb = XLSX.read(await file.arrayBuffer());
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames.at(0)], { header: 1 }).slice(1);
+  let count = 0;
+  for (const r of rows) {
+    if (!r || !r.at(0)) continue;
+    const name = String(r.at(0)).trim();
+    const qty = Number(r.at(1)) || 0;
+    const unit = String(r.at(2) || 'шт').trim();
+    const existing = cons.find(c => c.name.toLowerCase() === name.toLowerCase() && (c.unit || 'шт').toLowerCase() === unit.toLowerCase());
+    if (existing) {
+      await api('consumables?id=eq.' + existing.id, 'PATCH', { qty: Number(existing.qty) + qty });
+    } else {
+      await api('consumables', 'POST', { name, qty, unit });
+    }
+    count++;
+  }
+  input.value = '';
+  alert(`Загружено позиций: ${count}`);
+  await refresh();
+}

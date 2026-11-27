@@ -1,4 +1,9 @@
-let curToolTab = 'tools', camStream = null, scanTimer = null;
+let curToolTab = 'tools', toolFilter = 'all', camStream = null, scanTimer = null;
+
+function setToolFilter(f) {
+  toolFilter = f;
+  renderToolsMod();
+}
 
 async function uploadToolPhoto(inpId) {
   const inp = document.getElementById(inpId);
@@ -46,36 +51,56 @@ function renderToolsMod() {
   if (addC) addC.classList.toggle('hidden', !isStaff);
 
   if (curToolTab === 'tools') {
+    ['all', 'stock', 'work', 'repair'].forEach(f => {
+      const b = document.getElementById('tf-' + f);
+      if (b) b.style.opacity = toolFilter === f ? '1' : '0.6';
+    });
     const st = { stock: 'На складе', work: 'В работе', repair: 'В ремонте' };
-    document.getElementById('t-list').innerHTML = tools.map(t => {
+    const q = (document.getElementById('t-search')?.value || '').trim().toLowerCase();
+    const list = tools.filter(t => {
+      const status = t.status || 'stock';
+      if (toolFilter !== 'all' && status !== toolFilter) return false;
+      if (!q) return true;
+      const h = emps.find(e => e.id === t.holder_id);
+      const code = (t.inv_number || ('TOOL-' + t.id)).toLowerCase();
+      return t.name.toLowerCase().includes(q) || code.includes(q) || (h && h.name.toLowerCase().includes(q));
+    });
+
+    document.getElementById('t-list').innerHTML = list.map(t => {
       const h = emps.find(e => e.id === t.holder_id), o = objs.find(x => x.id === t.object_id);
       const code = t.inv_number || ('TOOL-' + t.id);
-      return `<div class="card" onclick="openToolCard(${t.id})" style="cursor:pointer;">
-        <div class="row" style="justify-content:space-between;">
-          <strong>${code} — ${t.name}</strong>
-          <span class="badge ${t.status || 'stock'}">${st[t.status] || 'На складе'}</span>
+      const status = t.status || 'stock';
+      const place = status === 'work' ? (o && o.id !== 1 ? o.name : 'На руках / в авто') : (status === 'repair' ? 'В ремонте' : 'Склад');
+      return `<div class="list-row" onclick="openToolCard(${t.id})" style="cursor:pointer;">
+        <div style="padding-right:8px;">
+          <strong>${code}</strong> · ${t.name}<br>
+          <small style="color:#64748b;">📍 ${place}${h ? ' · 👷 ' + h.name : ''}</small>
         </div>
-        <div style="font-size:12px;color:#64748b;margin-top:6px;">📍 ${o ? o.name : 'Склад'} ${h ? '| 👷 ' + h.name : ''}</div>
+        <span class="badge ${status}">${st[status] || 'На складе'}</span>
       </div>`;
-    }).join('') || '<div class="card" style="text-align:center;color:#94a3b8;">Инструментов пока нет</div>';
+    }).join('') || '<div style="text-align:center;color:#94a3b8;padding:12px;">Ничего не найдено</div>';
   } else if (curToolTab === 'cons') {
-    document.getElementById('c-list').innerHTML = cons.map(c => `
-      <div class="card row" style="justify-content:space-between;cursor:pointer;" onclick="openConsCard(${c.id})">
+    const q = (document.getElementById('c-search')?.value || '').trim().toLowerCase();
+    const list = cons.filter(c => !q || c.name.toLowerCase().includes(q));
+    document.getElementById('c-list').innerHTML = list.map(c => `
+      <div class="list-row" style="cursor:pointer;" onclick="openConsCard(${c.id})">
         <strong>${c.name}</strong>
         <span class="badge ${Number(c.qty) > 0 ? 'stock' : 'repair'}">${c.qty} ${c.unit || 'шт'}</span>
-      </div>`).join('') || '<div class="card" style="text-align:center;color:#94a3b8;">Склад расходников пуст</div>';
+      </div>`).join('') || '<div style="text-align:center;color:#94a3b8;padding:12px;">Материалы не найдены</div>';
   } else if (curToolTab === 'logs') {
     document.getElementById('t-logs-list').innerHTML = (tLogs || []).map(l => {
       const tl = tools.find(x => x.id === l.tool_id);
       const em = emps.find(x => x.id === l.employee_id);
       const ob = objs.find(x => x.id === l.object_id);
-      const dt = l.created_at ? new Date(l.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-      return `<div class="card" style="font-size:13px;">
-        <div class="row" style="justify-content:space-between;margin-bottom:4px;">
+      const rawDate = l.created_at || l.date || l.log_date;
+      const dt = rawDate ? new Date(rawDate).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      const place = ob && ob.id !== 1 ? ob.name : 'Склад / на руках';
+      return `<div class="card" style="font-size:13px;padding:10px 12px;">
+        <div class="row" style="justify-content:space-between;margin-bottom:3px;">
           <strong>${tl ? (tl.inv_number || '') + ' ' + tl.name : l.action}</strong>
-          <small style="color:#64748b;">${dt}</small>
+          <span style="font-size:11px;color:#475569;font-weight:bold;">${dt}</span>
         </div>
-        ${em ? em.name : ''}: ${tl ? l.action : ''} (${ob ? ob.name : 'Склад'}) ${l.comment ? '— ' + l.comment : ''}
+        <div style="color:#475569;">${em ? em.name : ''}: ${tl ? l.action : ''} (${place}) ${l.comment ? '— ' + l.comment : ''}</div>
       </div>`;
     }).join('') || '<div class="card" style="text-align:center;color:#94a3b8;">Журнал пуст</div>';
   }
@@ -93,6 +118,7 @@ function printOneQR(id) {
   document.getElementById('print-area').innerHTML = `<div class="qr-sticker"><img src="${makeQR(code)}" style="width:110px;height:110px;"><div style="font-weight:bold;">${code}</div><div style="font-size:11px;">${t.name}</div></div>`;
   setTimeout(() => window.print(), 250);
 }
+
 function printAllQR() {
   document.getElementById('print-area').innerHTML = tools.map(t => {
     const code = t.inv_number || ('TOOL-' + t.id);
@@ -100,21 +126,23 @@ function printAllQR() {
   }).join('');
   setTimeout(() => window.print(), 250);
 }
-
 function openToolCard(id) {
   const t = tools.find(x => x.id === id);
   if (!t) return;
   const h = emps.find(e => e.id === t.holder_id), o = objs.find(x => x.id === t.object_id);
   const code = t.inv_number || ('TOOL-' + t.id);
-  const objOpt = objs.filter(x => x.id !== 1).map(x => `<option value="${x.id}">${x.name}</option>`).join('') || '<option value="1">На объект</option>';
+  const noObjOpt = '<option value="1">🚐 Без объекта (в служебном авто / на руках)</option>';
+  const objOpt = noObjOpt + objs.filter(x => x.id !== 1).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
   const empOpt = emps.filter(x => x.id !== user.id).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
   const dtText = t.purchase_date ? new Date(t.purchase_date).toLocaleDateString('ru-RU') : '—';
   const prText = t.price ? Number(t.price).toLocaleString('ru-RU') + ' ₽' : '—';
+  const status = t.status || 'stock';
+  const place = status === 'work' ? (o && o.id !== 1 ? o.name : 'Без объекта (в авто / на руках)') : (status === 'repair' ? 'В ремонте' : 'Склад');
 
   let actions = '';
-  if (!t.status || t.status === 'stock') {
+  if (status === 'stock') {
     actions = `<select id="tk-obj">${objOpt}</select><button onclick="toolTake(${id})" class="btn-green">Взять инструмент себе</button>`;
-  } else if (t.status === 'work') {
+  } else if (status === 'work') {
     actions = `<button onclick="toolReturn(${id})" class="btn-green">✅ Вернуть на склад</button>
       <select id="tr-emp">${empOpt}</select><select id="tr-obj">${objOpt}</select>
       <button onclick="toolTransfer(${id})" class="btn-amber">🤝 Передать коллеге / объект</button>
@@ -128,7 +156,7 @@ function openToolCard(id) {
     <h3 style="margin-bottom:6px;">${t.name}</h3>
     ${t.photo_url ? `<img src="${t.photo_url}" class="thumb">` : ''}
     <p style="font-size:13px;color:#475569;margin-bottom:10px;">
-      Место: <strong>${o ? o.name : 'Склад'}</strong> · У кого: <strong>${h ? h.name : 'Никого'}</strong><br>
+      Место: <strong>${place}</strong> · У кого: <strong>${h ? h.name : 'Никого'}</strong><br>
       Поступил: <strong>${dtText}</strong> · Стоимость: <strong>${prText}</strong>${t.serial_number ? '<br>S/N: ' + t.serial_number : ''}
     </p>
     ${actions}
@@ -172,31 +200,31 @@ async function saveTool(id) {
   await refresh();
   openToolCard(id);
 }
-
 async function toolTake(id) {
   const oid = Number(document.getElementById('tk-obj').value) || 1;
   await api('tools?id=eq.' + id, 'PATCH', { status: 'work', holder_id: user.id, object_id: oid });
-  await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Взял в работу', object_id: oid });
+  await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Взял в работу', object_id: oid, created_at: new Date().toISOString() });
   closeModal(); await refresh();
 }
 
 async function toolReturn(id) {
   await api('tools?id=eq.' + id, 'PATCH', { status: 'stock', holder_id: null, object_id: 1 });
-  await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Вернул на склад', object_id: 1 });
+  await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Вернул на склад', object_id: 1, created_at: new Date().toISOString() });
   closeModal(); await refresh();
 }
+
 async function toolTransfer(id) {
   const eid = Number(document.getElementById('tr-emp').value), oid = Number(document.getElementById('tr-obj').value) || 1;
   const next = emps.find(e => e.id === eid);
   await api('tools?id=eq.' + id, 'PATCH', { status: 'work', holder_id: eid, object_id: oid });
-  await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Передал коллеге', object_id: oid, comment: next ? next.name : '' });
+  await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'Передал коллеге', object_id: oid, comment: next ? next.name : '', created_at: new Date().toISOString() });
   closeModal(); await refresh();
 }
 
 async function toolRepair(id) {
   const comment = document.getElementById('rp-comm').value.trim();
   await api('tools?id=eq.' + id, 'PATCH', { status: 'repair', holder_id: null, object_id: 1 });
-  await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'В ремонт', object_id: 1, comment });
+  await api('logs', 'POST', { tool_id: id, employee_id: user.id, action: 'В ремонт', object_id: 1, comment, created_at: new Date().toISOString() });
   closeModal(); await refresh();
 }
 
@@ -268,7 +296,7 @@ async function consTake(id) {
   const c = cons.find(x => x.id === id), val = Number(document.getElementById('cs-qty').value), oid = Number(document.getElementById('cs-obj').value) || 1;
   if (val <= 0 || val > Number(c.qty)) return alert('Недостаточно на складе!');
   await api('consumables?id=eq.' + id, 'PATCH', { qty: Number(c.qty) - val });
-  await api('logs', 'POST', { employee_id: user.id, action: `Переместил со склада на объект: ${c.name}`, object_id: oid, comment: `${val} ${c.unit || 'шт'}` });
+  await api('logs', 'POST', { employee_id: user.id, action: `Переместил со склада на объект: ${c.name}`, object_id: oid, comment: `${val} ${c.unit || 'шт'}`, created_at: new Date().toISOString() });
   closeModal(); await refresh();
 }
 
@@ -276,7 +304,7 @@ async function consAddQty(id) {
   const c = cons.find(x => x.id === id), val = Number(document.getElementById('cs-qty').value);
   if (val <= 0) return;
   await api('consumables?id=eq.' + id, 'PATCH', { qty: Number(c.qty) + val });
-  await api('logs', 'POST', { employee_id: user.id, action: `Пополнил склад: ${c.name}`, object_id: 1, comment: `+${val} ${c.unit || 'шт'}` });
+  await api('logs', 'POST', { employee_id: user.id, action: `Пополнил склад: ${c.name}`, object_id: 1, comment: `+${val} ${c.unit || 'шт'}`, created_at: new Date().toISOString() });
   closeModal(); await refresh();
 }
 

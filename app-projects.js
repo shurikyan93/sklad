@@ -224,143 +224,181 @@ function exportStagePDF(type) {
   const cleanName = `${prefix}_${o.name}_${s.name}.pdf`.replace(/[\\/:*?"<>|]/g, '_');
   html2pdf().from(box.firstElementChild).set({ margin: 10, filename: cleanName, html2canvas: { scale: 2, scrollX: 0, scrollY: 0, windowWidth: 800 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).save();
 }
-function setWorkMode(m) {
-  workMode = m;
-  document.getElementById('wm-piece').className = 'btn-sm ' + (m === 'piece' ? '' : 'btn-dark');
-  document.getElementById('wm-shift').className = 'btn-sm ' + (m === 'shift' ? '' : 'btn-dark');
-  document.getElementById('wm-piece').style.opacity = m === 'piece' ? 1 : 0.65;
-  document.getElementById('wm-shift').style.opacity = m === 'shift' ? 1 : 0.65;
-  document.getElementById('w-piece-box').classList.toggle('hidden', m !== 'piece');
-  document.getElementById('w-shift-box').classList.toggle('hidden', m !== 'shift');
+function fillWorkStages() {
+  const oid = Number(document.getElementById('sw-obj').value);
+  const list = stages.filter(s => Number(s.object_id) === oid);
+  document.getElementById('sw-stage').innerHTML = list.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
+
+function setWorkMode(mode) {
+  workMode = mode;
+  document.getElementById('sw-piece-box').classList.toggle('hidden', mode !== 'piece');
+  document.getElementById('sw-shift-box').classList.toggle('hidden', mode !== 'shift');
+  document.getElementById('sw-mode-piece').style.opacity = mode === 'piece' ? '1' : '0.6';
+  document.getElementById('sw-mode-shift').style.opacity = mode === 'shift' ? '1' : '0.6';
+  calcWorkSum();
+}
+
+function calcWorkSum() {
+  const info = document.getElementById('sw-calc-info');
+  if (!info) return 0;
+  if (workMode === 'shift') {
+    const days = Number(document.getElementById('sw-days').value) || 0;
+    const dayRate = user.salary_type === 'day' ? Number(user.base_salary || 0) : 0;
+    const sum = days * dayRate;
+    info.textContent = `К начислению за смену: ${sum.toLocaleString('ru-RU')} ₽ (ставка: ${dayRate.toLocaleString('ru-RU')} ₽/день)`;
+    return sum;
+  }
+  const wt = wTypes.find(x => x.id === Number(document.getElementById('sw-type').value));
+  const qty = Number(document.getElementById('sw-qty').value) || 0;
+  const sum = wt ? qty * Number(wt.rate || 0) : 0;
+  info.textContent = `К начислению: ${sum.toLocaleString('ru-RU')} ₽`;
+  return sum;
 }
 
 function renderSalaryMod() {
-  const isStaff = user.role === 'admin' || user.role === 'foreman';
-  document.getElementById('sal-admin-card').classList.toggle('hidden', !isStaff);
-  if (isStaff) {
-    document.getElementById('w-emp').innerHTML = emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-    document.getElementById('w-wt').innerHTML = wTypes.map(w => `<option value="${w.id}">${w.name} (${w.rate} ₽/${w.unit || 'шт'})</option>`).join('');
-    document.getElementById('w-obj').innerHTML = objs.filter(o => o.id !== 1).map(o => `<option value="${o.id}">${o.name}</option>`).join('');
-    document.getElementById('s-emp').innerHTML = emps.map(e => `<option value="${e.id}">${e.name} (${e.shift_rate || 3500} ₽/смена)</option>`).join('');
-    document.getElementById('s-obj').innerHTML = objs.filter(o => o.id !== 1).map(o => `<option value="${o.id}">${o.name}</option>`).join('');
-  }
-  const list = isStaff ? works : works.filter(w => w.employee_id === user.id);
-  const byEmp = {};
-  emps.forEach(e => {
-    const ew = works.filter(w => w.employee_id === e.id).reduce((a, b) => a + Number(b.amount || 0), 0);
-    const ep = payouts.filter(p => p.employee_id === e.id).reduce((a, b) => a + Number(b.amount || 0), 0);
-    byEmp[e.id] = { emp: e, earned: ew, paid: ep, debt: ew - ep };
-  });
+  const isWorker = user.role === 'worker', isForeman = user.role === 'foreman', isAdmin = user.role === 'admin';
+  document.getElementById('s-worker-form').classList.toggle('hidden', !isWorker && !isForeman);
+  document.getElementById('s-approve-box').classList.toggle('hidden', !isAdmin && !isForeman);
+  document.getElementById('s-admin-box').classList.toggle('hidden', !isAdmin);
 
-  let html = '';
-  if (isStaff) {
-    html += `<div class="card"><h4>💰 Сводка по сотрудникам (начислено / выплачено / долг)</h4>` + Object.values(byEmp).map(x => `<div class="list-row"><div><strong>${x.emp.name}</strong><br><small style="color:#64748b;">Начислено: ${x.earned.toLocaleString('ru-RU')} ₽ · Выплачено: ${x.paid.toLocaleString('ru-RU')} ₽</small></div><div style="text-align:right;"><strong style="color:${x.debt > 0 ? '#e11d48' : '#059669'};">${x.debt.toLocaleString('ru-RU')} ₽</strong><br><button onclick="openPayoutModal(${x.emp.id})" class="btn-sm btn-green" style="margin-top:4px;">Выплатить</button></div></div>`).join('') + `</div>`;
-  } else {
-    const me = byEmp[user.id] || { earned: 0, paid: 0, debt: 0 };
-    html += `<div class="card"><h4>💰 Моя зарплата</h4><p style="font-size:14px;">Начислено: <strong>${me.earned.toLocaleString('ru-RU')} ₽</strong> · Выплачено: <strong>${me.paid.toLocaleString('ru-RU')} ₽</strong><br>К выплате (долг): <strong style="color:#e11d48;font-size:16px;">${me.debt.toLocaleString('ru-RU')} ₽</strong></p></div>`;
+  if (isWorker || isForeman) {
+    document.getElementById('sw-obj').innerHTML = objs.filter(o => o.id !== 1).map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+    fillWorkStages();
+    document.getElementById('sw-type').innerHTML = wTypes.map(w => `<option value="${w.id}">${w.name} (${w.rate} ₽/${w.unit || 'шт'})</option>`).join('');
+    setWorkMode(workMode);
   }
 
-  html += `<div class="card"><h4>📝 История работ и смен</h4>` + (list.slice().reverse().map(w => {
-    const e = emps.find(x => x.id === w.employee_id), o = objs.find(x => x.id === w.object_id);
-    return `<div class="list-row"><div><strong>${w.work_name}</strong> · <span style="color:#059669;font-weight:bold;">+${Number(w.amount).toLocaleString('ru-RU')} ₽</span><br><small style="color:#64748b;">👷 ${e ? e.name : '—'} · 🏗️ ${o ? o.name : '—'} · ${new Date(w.created_at).toLocaleDateString('ru-RU')}</small></div>${isStaff ? `<button onclick="delWork(${w.id})" class="btn-sm btn-red">✕</button>` : ''}</div>`;
-  }).join('') || '<div style="text-align:center;color:#94a3b8;">Записей пока нет</div>') + `</div>`;
+  if (isAdmin || isForeman) {
+    const pend = wLogs.filter(w => w.status === 'pending');
+    document.getElementById('s-pending-list').innerHTML = pend.map(w => {
+      const emp = emps.find(e => e.id === w.employee_id), st = stages.find(s => s.id === w.stage_id), ob = objs.find(o => o.id === w.object_id);
+      return `<div class="list-row"><div><strong>${emp ? emp.name : 'Сотрудник'}</strong> · <strong>${Number(w.total || 0).toLocaleString('ru-RU')} ₽</strong><br><small style="color:#64748b;">${w.work_name} (${w.qty} ${w.unit || 'шт'}) · ${ob ? ob.name : ''} ${st ? '· ' + st.name : ''}${w.comment ? ' · ' + w.comment : ''}</small></div><div class="row"><button onclick="approveWork(${w.id})" class="btn-sm btn-green">✓</button><button onclick="rejectWork(${w.id})" class="btn-sm btn-red">✕</button></div></div>`;
+    }).join('') || '<div style="font-size:12px;color:#94a3b8;">Нет работ на проверке</div>';
+  }
 
-  if (isStaff) {
-    html += `<div class="card"><h4>💸 История выплат</h4>` + (payouts.slice().reverse().map(p => {
+  if (isAdmin) {
+    document.getElementById('sp-emp').innerHTML = emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    if (!document.getElementById('sp-date').value) document.getElementById('sp-date').value = new Date().toISOString().slice(0, 10);
+
+    document.getElementById('s-debt-list').innerHTML = emps.map(e => {
+      const earned = wLogs.filter(w => w.employee_id === e.id && w.status === 'approved').reduce((s, w) => s + Number(w.total || 0), 0);
+      const paid = salPays.filter(p => p.employee_id === e.id).reduce((s, p) => s + Number(p.amount || 0), 0);
+      const debt = earned - paid;
+      return `<div class="list-row"><div><strong>${e.name}</strong><br><small style="color:#64748b;">Начислено: ${earned.toLocaleString('ru-RU')} ₽ · Выплачено: ${paid.toLocaleString('ru-RU')} ₽</small></div><strong style="color:${debt > 0 ? '#e11d48' : '#059669'};">${debt.toLocaleString('ru-RU')} ₽</strong></div>`;
+    }).join('');
+
+    document.getElementById('s-pay-history').innerHTML = salPays.map(p => {
       const e = emps.find(x => x.id === p.employee_id);
-      return `<div class="list-row"><div><strong>${e ? e.name : '—'}</strong> · <span style="color:#2563eb;font-weight:bold;">${Number(p.amount).toLocaleString('ru-RU')} ₽</span>${p.comment ? ' <small style="color:#64748b;">(' + p.comment + ')</small>' : ''}<br><small style="color:#94a3b8;">${new Date(p.created_at).toLocaleDateString('ru-RU')}</small></div><div class="row"><button onclick="editPayoutModal(${p.id})" class="btn-sm">✏️</button><button onclick="delPayout(${p.id})" class="btn-sm btn-red">✕</button></div></div>`;
-    }).join('') || '<div style="text-align:center;color:#94a3b8;">Выплат пока нет</div>') + `</div>`;
+      return `<div class="list-row"><div><strong>${e ? e.name : 'Сотрудник'}</strong> · <strong>${Number(p.amount || 0).toLocaleString('ru-RU')} ₽</strong><br><small style="color:#64748b;">${p.pay_date || new Date(p.created_at).toLocaleDateString('ru-RU')} ${p.comment ? '· ' + p.comment : ''}</small></div><div class="row"><button onclick="editPayModal(${p.id})" class="btn-sm">✏️</button><button onclick="delPay(${p.id})" class="btn-sm btn-red">✕</button></div></div>`;
+    }).join('') || '<div style="font-size:12px;color:#94a3b8;">Выплат пока нет</div>';
   }
-  document.getElementById('sal-content').innerHTML = html;
 }
+async function submitWork() {
+  const object_id = Number(document.getElementById('sw-obj').value), stage_id = Number(document.getElementById('sw-stage').value) || null, comment = document.getElementById('sw-note').value.trim();
+  if (!object_id) return alert('Выберите объект');
 
-async function addWork() {
-  const eid = Number(document.getElementById('w-emp').value), wt = wTypes.find(x => x.id === Number(document.getElementById('w-wt').value)), oid = Number(document.getElementById('w-obj').value), qty = Number(document.getElementById('w-qty').value) || 0;
-  if (!wt || qty <= 0) return alert('Укажите объём');
-  const amt = qty * Number(wt.rate || 0);
-  await api('work_logs', 'POST', { employee_id: eid, object_id: oid, work_name: `${wt.name} (${qty} ${wt.unit || 'шт'})`, amount: amt });
+  if (workMode === 'shift') {
+    const days = Number(document.getElementById('sw-days').value) || 0;
+    if (days <= 0) return alert('Укажите количество смен');
+    const rate = user.salary_type === 'day' ? Number(user.base_salary || 0) : 0;
+    await api('work_logs', 'POST', { employee_id: user.id, object_id, stage_id, work_name: 'Смена (оклад за день)', unit: 'смена', qty: days, rate, total: days * rate, comment, status: 'pending' });
+    document.getElementById('sw-note').value = '';
+    return await refresh();
+  }
+
+  const wt = wTypes.find(x => x.id === Number(document.getElementById('sw-type').value)), qty = Number(document.getElementById('sw-qty').value) || 0;
+  if (!wt || qty <= 0) return alert('Выберите работу и укажите количество');
+  const rate = Number(wt.rate || 0);
+  await api('work_logs', 'POST', { employee_id: user.id, object_id, stage_id, work_name: wt.name, unit: wt.unit || 'шт', qty, rate, total: qty * rate, comment, status: 'pending' });
+  document.getElementById('sw-qty').value = ''; document.getElementById('sw-note').value = '';
   await refresh();
 }
 
-async function addShift() {
-  const eid = Number(document.getElementById('s-emp').value), emp = emps.find(x => x.id === eid), oid = Number(document.getElementById('s-obj').value), days = Number(document.getElementById('s-days').value) || 0;
-  const customRate = Number(document.getElementById('s-rate').value), rate = customRate > 0 ? customRate : Number(emp?.shift_rate || 3500);
-  if (days <= 0) return alert('Укажите кол-во смен');
-  await api('work_logs', 'POST', { employee_id: eid, object_id: oid, work_name: `Смена (${days} дн. × ${rate} ₽)`, amount: days * rate });
+async function approveWork(id) {
+  const w = wLogs.find(x => x.id === id);
+  await api('work_logs?id=eq.' + id, 'PATCH', { status: 'approved' });
+  if (w && w.stage_id && w.unit !== 'смена') {
+    const wt = wTypes.find(x => x.name === w.work_name);
+    await api('stage_items', 'POST', { stage_id: w.stage_id, estimate_type: 'fact', item_kind: 'work', name: w.work_name, unit: w.unit || 'шт', qty: Number(w.qty), cost_price: Number(w.rate), client_price: wt ? Number(wt.client_rate || 0) : 0 });
+  }
   await refresh();
 }
 
-async function delWork(id) { if (confirm('Удалить запись о работе?')) { await api('work_logs?id=eq.' + id, 'DELETE'); await refresh(); } }
-function openPayoutModal(eid) { const emp = emps.find(e => e.id === eid); openModal(`<h3>💸 Выплата: ${emp ? emp.name : ''}</h3><input id="po-amt" type="number" placeholder="Сумма выплаты, ₽"><input id="po-comm" placeholder="Комментарий (напр. аванс)"><button onclick="savePayout(${eid})" class="btn-green">Сохранить выплату</button>`); }
-async function savePayout(eid) { const amt = Number(document.getElementById('po-amt').value) || 0, comm = document.getElementById('po-comm').value.trim(); if (amt <= 0) return alert('Введите сумму'); await api('payouts', 'POST', { employee_id: eid, amount: amt, comment: comm }); closeModal(); await refresh(); }
-function editPayoutModal(id) { const p = payouts.find(x => x.id === id); if (p) openModal(`<h3>✏️ Редактировать выплату</h3><input id="ed-po-amt" type="number" value="${Number(p.amount)}"><input id="ed-po-comm" value="${p.comment || ''}" placeholder="Комментарий"><div class="row"><button onclick="saveEditPayout(${id})" class="btn-green">Сохранить</button><button onclick="closeModal()" class="btn-red">Отмена</button></div>`); }
-async function saveEditPayout(id) { await api('payouts?id=eq.' + id, 'PATCH', { amount: Number(document.getElementById('ed-po-amt').value) || 0, comment: document.getElementById('ed-po-comm').value.trim() }); closeModal(); await refresh(); }
-async function delPayout(id) { if (confirm('Удалить эту выплату?')) { await api('payouts?id=eq.' + id, 'DELETE'); await refresh(); } }
+async function rejectWork(id) { await api('work_logs?id=eq.' + id, 'DELETE'); await refresh(); }
+async function addPayment() {
+  const employee_id = Number(document.getElementById('sp-emp').value), amount = Number(document.getElementById('sp-amount').value) || 0, pay_date = document.getElementById('sp-date').value || new Date().toISOString().slice(0, 10), comment = document.getElementById('sp-note').value.trim();
+  if (!employee_id || amount <= 0) return alert('Укажите сотрудника и сумму');
+  await api('salary_payments', 'POST', { employee_id, amount, pay_date, comment });
+  document.getElementById('sp-amount').value = ''; document.getElementById('sp-note').value = '';
+  await refresh();
+}
+
+function editPayModal(id) {
+  const p = salPays.find(x => x.id === id);
+  if (p) openModal(`<h3>✏️ Редактировать выплату</h3><input id="ed-pay-amt" type="number" value="${Number(p.amount)}"><input id="ed-pay-date" type="date" value="${p.pay_date || ''}"><input id="ed-pay-note" value="${p.comment || ''}" placeholder="Комментарий"><div class="row"><button onclick="savePay(${id})" class="btn-green">Сохранить</button><button onclick="closeModal()" class="btn-red">Отмена</button></div>`);
+}
+
+async function savePay(id) { await api('salary_payments?id=eq.' + id, 'PATCH', { amount: Number(document.getElementById('ed-pay-amt').value) || 0, pay_date: document.getElementById('ed-pay-date').value, comment: document.getElementById('ed-pay-note').value.trim() }); closeModal(); await refresh(); }
+async function delPay(id) { if (confirm('Удалить запись о выплате?')) { await api('salary_payments?id=eq.' + id, 'DELETE'); await refresh(); } }
+
 function renderOverheads() {
-  const q = (document.getElementById('oh-search')?.value || '').toLowerCase().trim();
-  const list = overheads.filter(o => !q || (o.category || '').toLowerCase().includes(q) || (o.comment || '').toLowerCase().includes(q));
-  const byCat = {};
-  overheads.forEach(o => { byCat[o.category] = (byCat[o.category] || 0) + Number(o.amount || 0); });
-  const maxVal = Math.max(...Object.values(byCat), 1);
+  if (!document.getElementById('oh-date').value) document.getElementById('oh-date').value = new Date().toISOString().slice(0, 10);
+  const cats = ['Бензин/ГСМ', 'Аренда гаража', 'Расходы на авто', 'Спецодежда', 'Ремонт инструмента', 'Прочее'];
+  const colors = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#e11d48', '#475569'];
+  const totals = cats.map(c => overheads.filter(o => o.category === c).reduce((s, o) => s + Number(o.amount || 0), 0));
+  const maxVal = Math.max(...totals, 1);
 
-  document.getElementById('oh-chart').innerHTML = Object.entries(byCat).map(([cat, val]) => {
-    const pct = Math.round((val / maxVal) * 100);
-    return `<div style="margin-bottom:8px;"><div class="row" style="justify-content:space-between;font-size:12px;"><span>${cat}</span><strong>${val.toLocaleString('ru-RU')} ₽</strong></div><div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;"><div style="background:#2563eb;width:${pct}%;height:100%;"></div></div></div>`;
-  }).join('') || '<div style="font-size:12px;color:#94a3b8;">Данных для графика пока нет</div>';
+  document.getElementById('oh-chart').innerHTML = cats.map((c, i) => `<div style="margin-bottom:8px;"><div class="row" style="justify-content:space-between;font-size:12px;"><span>${c}</span><strong>${totals[i].toLocaleString('ru-RU')} ₽</strong></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.round((totals[i] / maxVal) * 100)}%;background:${colors[i]};"></div></div></div>`).join('');
 
-  document.getElementById('oh-list').innerHTML = list.slice().reverse().map(o => `<div class="list-row"><div><strong>${o.category}</strong> · <span style="color:#e11d48;font-weight:bold;">−${Number(o.amount).toLocaleString('ru-RU')} ₽</span>${o.comment ? '<br><small style="color:#64748b;">' + o.comment + '</small>' : ''}<br><small style="color:#94a3b8;">${new Date(o.created_at).toLocaleDateString('ru-RU')}</small></div><div class="row"><button onclick="editOverheadModal(${o.id})" class="btn-sm">✏️</button><button onclick="delOverhead(${o.id})" class="btn-sm btn-red">✕</button></div></div>`).join('') || '<div style="text-align:center;color:#94a3b8;">Расходов не найдено</div>';
+  const q = (document.getElementById('oh-search')?.value || '').trim().toLowerCase();
+  const filtered = overheads.filter(o => !q || (o.category || '').toLowerCase().includes(q) || (o.comment || '').toLowerCase().includes(q));
+  document.getElementById('oh-list').innerHTML = filtered.map(o => `<div class="list-row"><div><strong>${o.category}</strong> · <strong>${Number(o.amount).toLocaleString('ru-RU')} ₽</strong><br><small style="color:#64748b;">${o.expense_date || ''} ${o.comment ? '· ' + o.comment : ''}</small></div><div class="row"><button onclick="editOverheadModal(${o.id})" class="btn-sm">✏️</button><button onclick="delOverhead(${o.id})" class="btn-sm btn-red">✕</button></div></div>`).join('') || '<div style="font-size:12px;color:#94a3b8;">Расходов не найдено</div>';
 }
-
 async function addOverhead() {
-  const cat = document.getElementById('oh-cat').value, amt = Number(document.getElementById('oh-amt').value) || 0, comm = document.getElementById('oh-comm').value.trim();
-  if (amt <= 0) return alert('Введите сумму расхода');
-  await api('overheads', 'POST', { category: cat, amount: amt, comment: comm });
-  document.getElementById('oh-amt').value = ''; document.getElementById('oh-comm').value = '';
+  const category = document.getElementById('oh-cat').value, amount = Number(document.getElementById('oh-amount').value) || 0, expense_date = document.getElementById('oh-date').value || new Date().toISOString().slice(0, 10), comment = document.getElementById('oh-note').value.trim();
+  if (amount <= 0) return alert('Укажите сумму расхода');
+  await api('overhead_expenses', 'POST', { category, amount, expense_date, comment });
+  document.getElementById('oh-amount').value = ''; document.getElementById('oh-note').value = '';
   await refresh();
 }
 
 function editOverheadModal(id) {
   const o = overheads.find(x => x.id === id);
   if (!o) return;
-  const cats = ['Бензин / ГСМ', 'Запчасти и ремонт авто', 'Аренда склада / офиса', 'Инструмент и расходники', 'Связь и ПО', 'Налоги и комиссия', 'Прочее'];
-  openModal(`<h3>✏️ Редактировать расход</h3><select id="ed-oh-cat">${cats.map(c => `<option value="${c}" ${o.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select><input id="ed-oh-amt" type="number" value="${Number(o.amount)}"><input id="ed-oh-comm" value="${o.comment || ''}" placeholder="Комментарий"><div class="row"><button onclick="saveOverhead(${id})" class="btn-green">Сохранить</button><button onclick="closeModal()" class="btn-red">Отмена</button></div>`);
+  const cats = ['Бензин/ГСМ', 'Аренда гаража', 'Расходы на авто', 'Спецодежда', 'Ремонт инструмента', 'Прочее'];
+  openModal(`<h3>✏️ Редактировать расход</h3><select id="ed-oh-cat">${cats.map(c => `<option value="${c}" ${o.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select><input id="ed-oh-amt" type="number" value="${Number(o.amount)}"><input id="ed-oh-date" type="date" value="${o.expense_date || ''}"><input id="ed-oh-note" value="${o.comment || ''}" placeholder="Комментарий"><div class="row"><button onclick="saveOverhead(${id})" class="btn-green">Сохранить</button><button onclick="closeModal()" class="btn-red">Отмена</button></div>`);
 }
 
-async function saveOverhead(id) { await api('overheads?id=eq.' + id, 'PATCH', { category: document.getElementById('ed-oh-cat').value, amount: Number(document.getElementById('ed-oh-amt').value) || 0, comment: document.getElementById('ed-oh-comm').value.trim() }); closeModal(); await refresh(); }
-async function delOverhead(id) { if (confirm('Удалить этот расход?')) { await api('overheads?id=eq.' + id, 'DELETE'); await refresh(); } }
+async function saveOverhead(id) { await api('overhead_expenses?id=eq.' + id, 'PATCH', { category: document.getElementById('ed-oh-cat').value, amount: Number(document.getElementById('ed-oh-amt').value) || 0, expense_date: document.getElementById('ed-oh-date').value, comment: document.getElementById('ed-oh-note').value.trim() }); closeModal(); await refresh(); }
+async function delOverhead(id) { if (confirm('Удалить запись о расходе?')) { await api('overhead_expenses?id=eq.' + id, 'DELETE'); await refresh(); } }
 
 function initReports() {
-  const now = new Date();
-  document.getElementById('rep-from').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  document.getElementById('rep-to').value = now.toISOString().slice(0, 10);
   document.getElementById('rep-obj').innerHTML = '<option value="all">Все объекты</option>' + objs.filter(o => o.id !== 1).map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+  document.getElementById('rep-emp').innerHTML = '<option value="all">Все сотрудники</option>' + emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
   renderReports();
 }
 
+function getFilteredReportData() {
+  const from = document.getElementById('rep-from').value, to = document.getElementById('rep-to').value, oid = document.getElementById('rep-obj').value, eid = document.getElementById('rep-emp').value;
+  const inRange = d => { if (!d) return true; const day = String(d).slice(0, 10); return (!from || day >= from) && (!to || day <= to); };
+  return {
+    pays: stagePays.filter(p => inRange(p.created_at) && (oid === 'all' || Number(p.object_id) === Number(oid))),
+    works: wLogs.filter(w => w.status === 'approved' && inRange(w.created_at) && (oid === 'all' || Number(w.object_id) === Number(oid)) && (eid === 'all' || Number(w.employee_id) === Number(eid))),
+    oh: overheads.filter(o => inRange(o.expense_date))
+  };
+}
+
 function renderReports() {
-  const dFrom = document.getElementById('rep-from').value, dTo = document.getElementById('rep-to').value + 'T23:59:59', oid = document.getElementById('rep-obj').value;
-  const inRange = dt => (!dFrom || dt >= dFrom) && (!dTo || dt <= dTo);
+  const { pays, works, oh } = getFilteredReportData();
+  const inc = pays.reduce((s, p) => s + Number(p.amount || 0), 0), wSum = works.reduce((s, w) => s + Number(w.total || 0), 0), ohSum = oh.reduce((s, o) => s + Number(o.amount || 0), 0), bal = inc - wSum - ohSum;
+  document.getElementById('rep-summary').innerHTML = `<h3>📈 Финансовая сводка</h3><div class="list-row"><span>Поступило от заказчиков:</span><strong style="color:#059669;">${inc.toLocaleString('ru-RU')} ₽</strong></div><div class="list-row"><span>Подтверждённая ЗП работникам:</span><strong>${wSum.toLocaleString('ru-RU')} ₽</strong></div><div class="list-row"><span>Накладные расходы:</span><strong>${ohSum.toLocaleString('ru-RU')} ₽</strong></div><div class="list-row"><span>Итоговый баланс за период:</span><strong style="color:${bal >= 0 ? '#059669' : '#e11d48'};">${bal.toLocaleString('ru-RU')} ₽</strong></div>`;
+}
 
-  const fPays = stagePays.filter(p => inRange(p.created_at) && (oid === 'all' || Number(p.object_id) === Number(oid)));
-  const fWorks = works.filter(w => inRange(w.created_at) && (oid === 'all' || Number(w.object_id) === Number(oid)));
-  const fOh = oid === 'all' ? overheads.filter(o => inRange(o.created_at)) : [];
-  const fItems = stageItems.filter(i => {
-    if (i.estimate_type !== 'fact' || i.item_kind !== 'mat') return false;
-    const st = stages.find(s => s.id === i.stage_id);
-    return st && inRange(st.created_at) && (oid === 'all' || Number(st.object_id) === Number(oid));
-  });
-
-  const inc = fPays.reduce((a, b) => a + Number(b.amount || 0), 0);
-  const sal = fWorks.reduce((a, b) => a + Number(b.amount || 0), 0);
-  const mats = fItems.reduce((a, b) => a + Number(b.qty || 0) * Number(b.cost_price || 0), 0);
-  const ohSum = fOh.reduce((a, b) => a + Number(b.amount || 0), 0);
-  const profit = inc - sal - mats - ohSum;
-
-  document.getElementById('rep-summary').innerHTML = `
-    <div class="list-row"><span>Поступления от заказчиков:</span><strong style="color:#059669;">+${inc.toLocaleString('ru-RU')} ₽</strong></div>
-    <div class="list-row"><span>Закупка материалов (факт):</span><strong style="color:#e11d48;">−${mats.toLocaleString('ru-RU')} ₽</strong></div>
-    <div class="list-row"><span>Начисленная ЗП (работы и смены):</span><strong style="color:#e11d48;">−${sal.toLocaleString('ru-RU')} ₽</strong></div>
-    <div class="list-row"><span>Накладные расходы:</span><strong style="color:#e11d48;">−${ohSum.toLocaleString('ru-RU')} ₽</strong></div>
-    <div class="list-row" style="font-size:16px;border-top:2px solid #e2e8f0;margin-top:6px;padding-top:10px;"><strong>Чистая прибыль за период:</strong><strong style="color:${profit >= 0 ? '#059669' : '#e11d48'};">${profit.toLocaleString('ru-RU')} ₽</strong></div>
-  `;
+function exportReportExcel() {
+  if (typeof XLSX === 'undefined') return alert('Excel библиотека не загружена');
+  const { pays, works, oh } = getFilteredReportData();
+  const inc = pays.reduce((s, p) => s + Number(p.amount || 0), 0), wSum = works.reduce((s, w) => s + Number(w.total || 0), 0), ohSum = oh.reduce((s, o) => s + Number(o.amount || 0), 0);
+  const ws = XLSX.utils.aoa_to_sheet([['Показатель', 'Сумма, ₽'], ['Поступило от заказчиков', inc], ['Подтверждённая ЗП работникам', wSum], ['Накладные расходы', ohSum], ['Итоговый баланс', inc - wSum - ohSum]]);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Отчёт'); XLSX.writeFile(wb, 'Финансовый_отчет.xlsx');
 }

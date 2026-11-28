@@ -224,6 +224,57 @@ function exportStagePDF(type) {
   const cleanName = `${prefix}_${o.name}_${s.name}.pdf`.replace(/[\\/:*?"<>|]/g, '_');
   html2pdf().from(box.firstElementChild).set({ margin: 10, filename: cleanName, html2canvas: { scale: 2, scrollX: 0, scrollY: 0, windowWidth: 800 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).save();
 }
+let shiftCalYear = new Date().getFullYear(), shiftCalMonth = new Date().getMonth();
+let shiftSelectedDates = new Set([new Date().toISOString().slice(0, 10)]);
+let payVisibleLimit = 20;
+
+function resetPayLimit() { payVisibleLimit = 20; }
+function showMorePays() { payVisibleLimit += 20; renderSalaryMod(); }
+
+function getSelectedWorkEmp() {
+  const sel = document.getElementById('sw-emp');
+  if (sel && !sel.closest('#sw-emp-box').classList.contains('hidden') && sel.value) {
+    return emps.find(e => Number(e.id) === Number(sel.value)) || user;
+  }
+  return user;
+}
+
+function onWorkEmpChange() {
+  const emp = getSelectedWorkEmp();
+  const rateInp = document.getElementById('sw-shift-rate');
+  if (rateInp) rateInp.value = emp.salary_type === 'day' ? Number(emp.base_salary || 0) : 0;
+  calcWorkSum();
+}
+
+function changeShiftMonth(delta) {
+  shiftCalMonth += delta;
+  if (shiftCalMonth < 0) { shiftCalMonth = 11; shiftCalYear--; }
+  if (shiftCalMonth > 11) { shiftCalMonth = 0; shiftCalYear++; }
+  renderShiftCalendar();
+}
+
+function toggleShiftDate(iso) {
+  if (shiftSelectedDates.has(iso)) shiftSelectedDates.delete(iso);
+  else shiftSelectedDates.add(iso);
+  renderShiftCalendar();
+  calcWorkSum();
+}
+
+function renderShiftCalendar() {
+  const box = document.getElementById('sw-cal-box');
+  if (!box) return;
+  const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  const firstDay = (new Date(shiftCalYear, shiftCalMonth, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(shiftCalYear, shiftCalMonth + 1, 0).getDate();
+  let grid = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(d => `<div style="text-align:center;font-size:11px;color:#64748b;font-weight:bold;">${d}</div>`).join('');
+  for (let i = 0; i < firstDay; i++) grid += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${shiftCalYear}-${String(shiftCalMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const active = shiftSelectedDates.has(iso);
+    grid += `<button type="button" onclick="toggleShiftDate('${iso}')" style="margin:0;padding:6px 0;font-size:12px;border-radius:8px;background:${active ? '#059669' : '#fff'};color:${active ? '#fff' : '#1e293b'};border:1px solid ${active ? '#059669' : '#cbd5e1'};">${d}</button>`;
+  }
+  box.innerHTML = `<div class="row" style="justify-content:space-between;margin-bottom:6px;"><button type="button" onclick="changeShiftMonth(-1)" class="btn-sm btn-dark" style="padding:4px 10px;">◀</button><strong style="font-size:13px;">${months[shiftCalMonth]} ${shiftCalYear}</strong><button type="button" onclick="changeShiftMonth(1)" class="btn-sm btn-dark" style="padding:4px 10px;">▶</button></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">${grid}</div>`;
+}
 function fillWorkStages() {
   const oid = Number(document.getElementById('sw-obj').value);
   const list = stages.filter(s => Number(s.object_id) === oid);
@@ -236,6 +287,7 @@ function setWorkMode(mode) {
   document.getElementById('sw-shift-box').classList.toggle('hidden', mode !== 'shift');
   document.getElementById('sw-mode-piece').style.opacity = mode === 'piece' ? '1' : '0.6';
   document.getElementById('sw-mode-shift').style.opacity = mode === 'shift' ? '1' : '0.6';
+  if (mode === 'shift') renderShiftCalendar();
   calcWorkSum();
 }
 
@@ -243,10 +295,10 @@ function calcWorkSum() {
   const info = document.getElementById('sw-calc-info');
   if (!info) return 0;
   if (workMode === 'shift') {
-    const days = Number(document.getElementById('sw-days').value) || 0;
-    const dayRate = user.salary_type === 'day' ? Number(user.base_salary || 0) : 0;
-    const sum = days * dayRate;
-    info.textContent = `К начислению за смену: ${sum.toLocaleString('ru-RU')} ₽ (ставка: ${dayRate.toLocaleString('ru-RU')} ₽/день)`;
+    const cnt = shiftSelectedDates.size;
+    const rate = Number(document.getElementById('sw-shift-rate').value) || 0;
+    const sum = cnt * rate;
+    info.textContent = `Выбрано смен: ${cnt} × ${rate.toLocaleString('ru-RU')} ₽ = ${sum.toLocaleString('ru-RU')} ₽`;
     return sum;
   }
   const wt = wTypes.find(x => x.id === Number(document.getElementById('sw-type').value));
@@ -258,16 +310,30 @@ function calcWorkSum() {
 
 function renderSalaryMod() {
   const isWorker = user.role === 'worker', isForeman = user.role === 'foreman', isAdmin = user.role === 'admin';
-  document.getElementById('s-worker-form').classList.toggle('hidden', !isWorker && !isForeman);
+  document.getElementById('s-worker-form').classList.remove('hidden');
   document.getElementById('s-approve-box').classList.toggle('hidden', !isAdmin && !isForeman);
-  document.getElementById('s-admin-box').classList.toggle('hidden', !isAdmin);
+  document.getElementById('s-debt-box').classList.toggle('hidden', !isAdmin);
+  document.getElementById('s-history-box').classList.remove('hidden');
 
-  if (isWorker || isForeman) {
-    document.getElementById('sw-obj').innerHTML = objs.filter(o => o.id !== 1).map(o => `<option value="${o.id}">${o.name}</option>`).join('');
-    fillWorkStages();
-    document.getElementById('sw-type').innerHTML = wTypes.map(w => `<option value="${w.id}">${w.name} (${w.rate} ₽/${w.unit || 'шт'})</option>`).join('');
-    setWorkMode(workMode);
+  const empBox = document.getElementById('sw-emp-box');
+  empBox.classList.toggle('hidden', isWorker);
+  if (!isWorker) {
+    const empSel = document.getElementById('sw-emp');
+    const prevEmp = empSel.value || String(user.id);
+    empSel.innerHTML = emps.map(e => `<option value="${e.id}" ${String(e.id) === prevEmp ? 'selected' : ''}>${e.name}</option>`).join('');
   }
+  const rateInp = document.getElementById('sw-shift-rate');
+  if (rateInp && !rateInp.value) {
+    const targetEmp = getSelectedWorkEmp();
+    rateInp.value = targetEmp.salary_type === 'day' ? Number(targetEmp.base_salary || 0) : 0;
+  }
+
+  const objSel = document.getElementById('sw-obj');
+  const prevObj = objSel.value;
+  objSel.innerHTML = objs.filter(o => o.id !== 1).map(o => `<option value="${o.id}" ${String(o.id) === prevObj ? 'selected' : ''}>${o.name}</option>`).join('');
+  fillWorkStages();
+  document.getElementById('sw-type').innerHTML = wTypes.map(w => `<option value="${w.id}">${w.name} (${w.rate} ₽/${w.unit || 'шт'})</option>`).join('');
+  setWorkMode(workMode);
 
   if (isAdmin || isForeman) {
     const pend = wLogs.filter(w => w.status === 'pending');
@@ -278,40 +344,57 @@ function renderSalaryMod() {
   }
 
   if (isAdmin) {
-    document.getElementById('sp-emp').innerHTML = emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-    if (!document.getElementById('sp-date').value) document.getElementById('sp-date').value = new Date().toISOString().slice(0, 10);
-
+    let totalDebt = 0;
     document.getElementById('s-debt-list').innerHTML = emps.map(e => {
       const earned = wLogs.filter(w => w.employee_id === e.id && w.status === 'approved').reduce((s, w) => s + Number(w.total || 0), 0);
       const paid = salPays.filter(p => p.employee_id === e.id).reduce((s, p) => s + Number(p.amount || 0), 0);
       const debt = earned - paid;
-      return `<div class="list-row"><div><strong>${e.name}</strong><br><small style="color:#64748b;">Начислено: ${earned.toLocaleString('ru-RU')} ₽ · Выплачено: ${paid.toLocaleString('ru-RU')} ₽</small></div><strong style="color:${debt > 0 ? '#e11d48' : '#059669'};">${debt.toLocaleString('ru-RU')} ₽</strong></div>`;
+      if (debt > 0) totalDebt += debt;
+      return `<div class="list-row" onclick="openPayModal(${e.id})" style="cursor:pointer;"><div><strong>${e.name}</strong><br><small style="color:#64748b;">Начислено: ${earned.toLocaleString('ru-RU')} ₽ · Выплачено: ${paid.toLocaleString('ru-RU')} ₽</small></div><strong style="color:${debt > 0 ? '#e11d48' : '#059669'};">${debt.toLocaleString('ru-RU')} ₽</strong></div>`;
     }).join('');
-
-    document.getElementById('s-pay-history').innerHTML = salPays.map(p => {
-      const e = emps.find(x => x.id === p.employee_id);
-      return `<div class="list-row"><div><strong>${e ? e.name : 'Сотрудник'}</strong> · <strong>${Number(p.amount || 0).toLocaleString('ru-RU')} ₽</strong><br><small style="color:#64748b;">${p.pay_date || new Date(p.created_at).toLocaleDateString('ru-RU')} ${p.comment ? '· ' + p.comment : ''}</small></div><div class="row"><button onclick="editPayModal(${p.id})" class="btn-sm">✏️</button><button onclick="delPay(${p.id})" class="btn-sm btn-red">✕</button></div></div>`;
-    }).join('') || '<div style="font-size:12px;color:#94a3b8;">Выплат пока нет</div>';
+    document.getElementById('s-total-debt').textContent = `Итого: ${totalDebt.toLocaleString('ru-RU')} ₽`;
   }
+
+  const filterSel = document.getElementById('sp-filter-emp');
+  document.getElementById('s-hist-title').textContent = isWorker ? '📜 Мои выплаты' : '📜 Журнал выплат';
+  filterSel.classList.toggle('hidden', isWorker);
+  if (!isWorker) {
+    const curF = filterSel.value || 'all';
+    filterSel.innerHTML = '<option value="all">Все сотрудники</option>' + emps.map(e => `<option value="${e.id}" ${String(e.id) === curF ? 'selected' : ''}>${e.name}</option>`).join('');
+  }
+  const fEmp = isWorker ? String(user.id) : (filterSel.value || 'all');
+  const filteredPays = salPays.filter(p => fEmp === 'all' || Number(p.employee_id) === Number(fEmp));
+  const shownPays = filteredPays.slice(0, payVisibleLimit);
+
+  document.getElementById('s-pay-history').innerHTML = shownPays.map(p => {
+    const e = emps.find(x => x.id === p.employee_id);
+    return `<div class="list-row"><div><strong>${isWorker ? '' : (e ? e.name + ' · ' : '')}${Number(p.amount || 0).toLocaleString('ru-RU')} ₽</strong><br><small style="color:#64748b;">${p.pay_date || new Date(p.created_at).toLocaleDateString('ru-RU')}${p.comment ? ' · ' + p.comment : ''}</small></div>${isAdmin ? `<div class="row"><button onclick="editPayModal(${p.id})" class="btn-sm">✏️</button><button onclick="delPay(${p.id})" class="btn-sm btn-red">✕</button></div>` : ''}</div>`;
+  }).join('') || '<div style="font-size:12px;color:#94a3b8;">Выплат пока нет</div>';
+  document.getElementById('sp-more-btn').classList.toggle('hidden', filteredPays.length <= payVisibleLimit);
 }
 async function submitWork() {
-  const object_id = Number(document.getElementById('sw-obj').value), stage_id = Number(document.getElementById('sw-stage').value) || null, comment = document.getElementById('sw-note').value.trim();
+  const emp = getSelectedWorkEmp();
+  const object_id = Number(document.getElementById('sw-obj').value), stage_id = Number(document.getElementById('sw-stage').value) || null, rawNote = document.getElementById('sw-note').value.trim();
   if (!object_id) return alert('Выберите объект');
 
   if (workMode === 'shift') {
-    const days = Number(document.getElementById('sw-days').value) || 0;
-    if (days <= 0) return alert('Укажите количество смен');
-    const rate = user.salary_type === 'day' ? Number(user.base_salary || 0) : 0;
-    await api('work_logs', 'POST', { employee_id: user.id, object_id, stage_id, work_name: 'Смена (оклад за день)', unit: 'смена', qty: days, rate, total: days * rate, comment, status: 'pending' });
+    const daysList = Array.from(shiftSelectedDates).sort();
+    if (!daysList.length) return alert('Выберите хотя бы один день в календаре');
+    const rate = Number(document.getElementById('sw-shift-rate').value) || 0;
+    const comment = ['Даты: ' + daysList.join(', '), rawNote].filter(Boolean).join(' · ');
+    await api('work_logs', 'POST', { employee_id: emp.id, object_id, stage_id, work_name: 'Смена (оклад за день)', unit: 'смена', qty: daysList.length, rate, total: daysList.length * rate, comment, status: 'pending' });
     document.getElementById('sw-note').value = '';
+    shiftSelectedDates = new Set([new Date().toISOString().slice(0, 10)]);
+    renderShiftCalendar(); calcWorkSum();
     return await refresh();
   }
 
   const wt = wTypes.find(x => x.id === Number(document.getElementById('sw-type').value)), qty = Number(document.getElementById('sw-qty').value) || 0;
   if (!wt || qty <= 0) return alert('Выберите работу и укажите количество');
   const rate = Number(wt.rate || 0);
-  await api('work_logs', 'POST', { employee_id: user.id, object_id, stage_id, work_name: wt.name, unit: wt.unit || 'шт', qty, rate, total: qty * rate, comment, status: 'pending' });
+  await api('work_logs', 'POST', { employee_id: emp.id, object_id, stage_id, work_name: wt.name, unit: wt.unit || 'шт', qty, rate, total: qty * rate, comment: rawNote, status: 'pending' });
   document.getElementById('sw-qty').value = ''; document.getElementById('sw-note').value = '';
+  calcWorkSum();
   await refresh();
 }
 
@@ -326,14 +409,19 @@ async function approveWork(id) {
 }
 
 async function rejectWork(id) { await api('work_logs?id=eq.' + id, 'DELETE'); await refresh(); }
-async function addPayment() {
-  const employee_id = Number(document.getElementById('sp-emp').value), amount = Number(document.getElementById('sp-amount').value) || 0, pay_date = document.getElementById('sp-date').value || new Date().toISOString().slice(0, 10), comment = document.getElementById('sp-note').value.trim();
-  if (!employee_id || amount <= 0) return alert('Укажите сотрудника и сумму');
-  await api('salary_payments', 'POST', { employee_id, amount, pay_date, comment });
-  document.getElementById('sp-amount').value = ''; document.getElementById('sp-note').value = '';
-  await refresh();
+
+function openPayModal(empId) {
+  const emp = emps.find(e => Number(e.id) === Number(empId));
+  const today = new Date().toISOString().slice(0, 10);
+  openModal(`<h3>💸 Выплата: ${emp ? emp.name : 'Сотрудник'}</h3><select id="mp-type"><option value="Аванс">Аванс</option><option value="ЗП">ЗП</option><option value="Премия">Премия</option></select><input id="mp-amt" type="number" step="any" placeholder="Сумма выплаты, ₽"><input id="mp-date" type="date" value="${today}"><input id="mp-note" placeholder="Комментарий (необязательно)"><div class="row"><button onclick="saveNewPay(${empId})" class="btn-green">Выдать</button><button onclick="closeModal()" class="btn-red">Отмена</button></div>`);
 }
 
+async function saveNewPay(empId) {
+  const pType = document.getElementById('mp-type').value, amount = Number(document.getElementById('mp-amt').value) || 0, pay_date = document.getElementById('mp-date').value || new Date().toISOString().slice(0, 10), extraNote = document.getElementById('mp-note').value.trim();
+  if (amount <= 0) return alert('Укажите сумму выплаты');
+  await api('salary_payments', 'POST', { employee_id: empId, amount, pay_date, comment: [pType, extraNote].filter(Boolean).join(' · ') });
+  closeModal(); await refresh();
+}
 function editPayModal(id) {
   const p = salPays.find(x => x.id === id);
   if (p) openModal(`<h3>✏️ Редактировать выплату</h3><input id="ed-pay-amt" type="number" value="${Number(p.amount)}"><input id="ed-pay-date" type="date" value="${p.pay_date || ''}"><input id="ed-pay-note" value="${p.comment || ''}" placeholder="Комментарий"><div class="row"><button onclick="savePay(${id})" class="btn-green">Сохранить</button><button onclick="closeModal()" class="btn-red">Отмена</button></div>`);
@@ -344,17 +432,22 @@ async function delPay(id) { if (confirm('Удалить запись о выпл
 
 function renderOverheads() {
   if (!document.getElementById('oh-date').value) document.getElementById('oh-date').value = new Date().toISOString().slice(0, 10);
+  const from = document.getElementById('oh-from')?.value || '', to = document.getElementById('oh-to')?.value || '';
+  const inRange = d => { if (!d) return true; const day = String(d).slice(0, 10); return (!from || day >= from) && (!to || day <= to); };
+  const periodOh = overheads.filter(o => inRange(o.expense_date || o.created_at));
+
   const cats = ['Бензин/ГСМ', 'Аренда гаража', 'Расходы на авто', 'Спецодежда', 'Ремонт инструмента', 'Прочее'];
   const colors = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#e11d48', '#475569'];
-  const totals = cats.map(c => overheads.filter(o => o.category === c).reduce((s, o) => s + Number(o.amount || 0), 0));
+  const totals = cats.map(c => periodOh.filter(o => o.category === c).reduce((s, o) => s + Number(o.amount || 0), 0));
   const maxVal = Math.max(...totals, 1);
 
   document.getElementById('oh-chart').innerHTML = cats.map((c, i) => `<div style="margin-bottom:8px;"><div class="row" style="justify-content:space-between;font-size:12px;"><span>${c}</span><strong>${totals[i].toLocaleString('ru-RU')} ₽</strong></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.round((totals[i] / maxVal) * 100)}%;background:${colors[i]};"></div></div></div>`).join('');
 
   const q = (document.getElementById('oh-search')?.value || '').trim().toLowerCase();
-  const filtered = overheads.filter(o => !q || (o.category || '').toLowerCase().includes(q) || (o.comment || '').toLowerCase().includes(q));
+  const filtered = periodOh.filter(o => !q || (o.category || '').toLowerCase().includes(q) || (o.comment || '').toLowerCase().includes(q));
   document.getElementById('oh-list').innerHTML = filtered.map(o => `<div class="list-row"><div><strong>${o.category}</strong> · <strong>${Number(o.amount).toLocaleString('ru-RU')} ₽</strong><br><small style="color:#64748b;">${o.expense_date || ''} ${o.comment ? '· ' + o.comment : ''}</small></div><div class="row"><button onclick="editOverheadModal(${o.id})" class="btn-sm">✏️</button><button onclick="delOverhead(${o.id})" class="btn-sm btn-red">✕</button></div></div>`).join('') || '<div style="font-size:12px;color:#94a3b8;">Расходов не найдено</div>';
 }
+
 async function addOverhead() {
   const category = document.getElementById('oh-cat').value, amount = Number(document.getElementById('oh-amount').value) || 0, expense_date = document.getElementById('oh-date').value || new Date().toISOString().slice(0, 10), comment = document.getElementById('oh-note').value.trim();
   if (amount <= 0) return alert('Укажите сумму расхода');
@@ -402,3 +495,4 @@ function exportReportExcel() {
   const ws = XLSX.utils.aoa_to_sheet([['Показатель', 'Сумма, ₽'], ['Поступило от заказчиков', inc], ['Подтверждённая ЗП работникам', wSum], ['Накладные расходы', ohSum], ['Итоговый баланс', inc - wSum - ohSum]]);
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Отчёт'); XLSX.writeFile(wb, 'Финансовый_отчет.xlsx');
 }
+

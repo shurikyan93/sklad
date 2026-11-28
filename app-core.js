@@ -30,13 +30,11 @@ function clearSession() {
 }
 
 function renderLoginUsers() {
-  const box = document.getElementById('login-screen');
-  if (!box) return;
-  let sel = document.getElementById('login-emp-sel');
-  if (!sel) {
-    sel = document.createElement('select');
-    sel.id = 'login-emp-sel';
-    box.insertBefore(sel, document.getElementById('pin-input'));
+  const sel = document.getElementById('login-emp-sel');
+  if (!sel) return;
+  if (!emps.length) {
+    sel.innerHTML = '<option value="">Нет доступных сотрудников</option>';
+    return;
   }
   sel.innerHTML = emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
 }
@@ -231,7 +229,9 @@ async function importPriceExcel(input) {
   input.value = ''; alert('Прайс-лист загружен!'); await refresh();
 }
 
-window.addEventListener('DOMContentLoaded', async () => {
+async function initLoginScreen() {
+  const sel = document.getElementById('login-emp-sel');
+  const err = document.getElementById('login-err');
   try {
     emps = await api('employees?order=name.asc') || [];
     renderLoginUsers();
@@ -247,6 +247,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (e) {
     clearSession();
-    document.getElementById('login-err').textContent = 'Ошибка загрузки списка сотрудников';
+    if (sel) sel.innerHTML = '<option value="">Ошибка подключения</option>';
+    if (err) err.textContent = 'Ошибка загрузки списка сотрудников: ' + e.message;
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', initLoginScreen);
+} else {
+  initLoginScreen();
+}

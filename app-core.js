@@ -55,11 +55,15 @@ async function login() {
     }
     if (!found) { err.textContent = 'Неверный ПИН-код'; return; }
     saveSession(found);
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('pin-input').value = '';
     await refresh();
     openHub();
-  } catch (e) { err.textContent = 'Ошибка: ' + e.message; }
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('pin-input').value = '';
+  } catch (e) {
+    clearSession();
+    document.getElementById('login-screen').classList.remove('hidden');
+    err.textContent = 'Ошибка входа: ' + e.message;
+  }
 }
 
 function logout() {
@@ -240,15 +244,16 @@ async function initLoginScreen() {
       const found = emps.find(e => Number(e.id) === Number(savedId));
       if (found) {
         saveSession(found);
-        document.getElementById('login-screen').classList.add('hidden');
         await refresh();
         openHub();
+        document.getElementById('login-screen').classList.add('hidden');
       }
     }
   } catch (e) {
     clearSession();
-    if (sel) sel.innerHTML = '<option value="">Ошибка подключения</option>';
-    if (err) err.textContent = 'Ошибка загрузки списка сотрудников: ' + e.message;
+    document.getElementById('login-screen').classList.remove('hidden');
+    if (sel && !emps.length) sel.innerHTML = '<option value="">Ошибка подключения</option>';
+    if (err) err.textContent = 'Ошибка: ' + e.message;
   }
 }
 
